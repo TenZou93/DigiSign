@@ -1,0 +1,193 @@
+<%- include('partials/header', { pageTitle: 'Kelola Signer', activePage: 'admin' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-people-fill"></i> Kelola Signer</h1>
+    <div class="breadcrumb-custom">Buat dan kelola identitas penandatangan</div>
+  </div>
+</div>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= success %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-triangle"></i> <%= error %></div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-md-5">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-person-plus"></i> Tambah Signer</h5>
+      </div>
+      <div class="card-body-custom">
+        <form method="POST" action="/admin/signers">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Label <span class="text-danger">*</span></label>
+            <input type="text" name="label" class="form-control" placeholder="contoh: Direktur, Manager" required style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" name="display_name" class="form-control" placeholder="Nama lengkap penandatangan" required style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Organisasi</label>
+            <input type="text" name="organization" class="form-control" placeholder="PT. Contoh / Dinas ABC" style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="email@contoh.com" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Telepon</label>
+              <input type="text" name="phone" class="form-control" placeholder="08xxxxxxxxxx" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary-custom text-white w-100"><i class="bi bi-plus-circle"></i> Tambah Signer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-list-ul"></i> Daftar Signer</h5>
+        <span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:500"><%= signers.length %> signer</span>
+      </div>
+      <div class="card-body-custom" style="padding:0">
+        <% if (signers.length === 0) { %>
+          <div class="text-center py-5">
+            <i class="bi bi-person-x" style="font-size:48px;color:#cbd5e1"></i>
+            <p class="text-muted mt-2">Belum ada signer. Tambahkan signer pertama Anda.</p>
+          </div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                  <th class="border-0" style="padding:14px 20px">Label</th>
+                  <th class="border-0">Nama</th>
+                  <th class="border-0">Organisasi</th>
+                  <th class="border-0">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% signers.forEach(s => { %>
+                  <tr>
+                    <td style="padding:14px 20px"><span class="badge" style="background:#f1f5f9;color:#475569;border-radius:6px;font-weight:500"><%= s.label %></span></td>
+                    <td>
+                      <strong><%= s.display_name %></strong>
+                      <% if (s.email) { %><br><small style="color:#64748b"><%= s.email %></small><% } %>
+                    </td>
+                    <td style="color:#64748b"><%= s.organization || '-' %></td>
+                    <td style="white-space:nowrap">
+                      <button class="btn btn-sm" style="border:1.5px solid #e2e8f0;border-radius:8px;color:#3b82f6" onclick="editSigner(<%= s.id %>, '<%= s.label %>', '<%= s.display_name %>', '<%= s.organization || '' %>', '<%= s.email || '' %>', '<%= s.phone || '' %>')" data-bs-toggle="modal" data-bs-target="#editModal">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm" style="border:1.5px solid #e2e8f0;border-radius:8px;color:#8b5cf6" onclick="viewKeys(<%= s.id %>)" data-bs-toggle="modal" data-bs-target="#keysModal">
+                        <i class="bi bi-key"></i>
+                      </button>
+                      <form method="POST" action="/admin/signers/<%= s.id %>/delete" class="d-inline" onsubmit="return confirm('Hapus signer ini?')">
+                        <button class="btn btn-sm" style="border:1.5px solid #fecaca;border-radius:8px;color:#ef4444"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none">
+      <form method="POST" id="editForm">
+        <div class="modal-header" style="border-bottom:1px solid #f1f5f9">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil"></i> Edit Signer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding:24px">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Label</label>
+            <input type="text" name="label" id="editLabel" class="form-control" required style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Nama Lengkap</label>
+            <input type="text" name="display_name" id="editName" class="form-control" required style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Organisasi</label>
+            <input type="text" name="organization" id="editOrg" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Email</label>
+              <input type="email" name="email" id="editEmail" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Telepon</label>
+              <input type="text" name="phone" id="editPhone" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #f1f5f9">
+          <button type="button" class="btn" style="border:1.5px solid #e2e8f0;border-radius:10px;color:#64748b" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary-custom text-white">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="keysModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none">
+      <div class="modal-header" style="border-bottom:1px solid #f1f5f9">
+        <h5 class="modal-title fw-bold"><i class="bi bi-key"></i> Kunci Publik Signer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px">
+        <div id="keysContent" class="text-center py-3">
+          <div class="spinner-border"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #f1f5f9">
+        <button type="button" class="btn" style="border:1.5px solid #e2e8f0;border-radius:10px;color:#64748b" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function editSigner(id, label, name, org, email, phone) {
+    document.getElementById('editForm').action = '/admin/signers/' + id + '/edit';
+    document.getElementById('editLabel').value = label;
+    document.getElementById('editName').value = name;
+    document.getElementById('editOrg').value = org;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editPhone').value = phone;
+  }
+  async function viewKeys(id) {
+    document.getElementById('keysContent').innerHTML = '<div class="spinner-border"></div>';
+    try {
+      const r = await fetch('/admin/signers/' + id + '/keys');
+      const d = await r.json();
+      document.getElementById('keysContent').innerHTML = `
+        <div class="text-start">
+          <p><strong>${d.signer.display_name}</strong> (${d.signer.label})</p>
+          <p class="text-muted small">Algoritma: ${d.signer.algorithm}</p>
+          <textarea class="form-control font-monospace small" rows="10" readonly style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:11px">${d.signer.public_key}</textarea>
+        </div>`;
+    } catch(e) {
+      document.getElementById('keysContent').innerHTML = '<div class="text-danger">Gagal memuat kunci</div>';
+    }
+  }
+</script>
+
+<%- include('partials/footer') %>

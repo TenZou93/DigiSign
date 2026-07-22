@@ -1,0 +1,561 @@
+<%- include('partials/header', { pageTitle: 'Tanda Tangan', activePage: 'sign' }) %>
+<style>
+  .preview-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #1a1a2e; z-index: 2000; display: none;
+    flex-direction: column;
+  }
+  .preview-overlay.show { display: flex; }
+  .preview-scroll {
+    flex: 1; overflow: auto; display: flex; justify-content: center;
+    padding: 20px 10px 80px 10px;
+  }
+  .pdf-page-wrapper {
+    position: relative; display: inline-block;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5); margin: 0 8px;
+    cursor: crosshair; flex-shrink: 0;
+  }
+  .pdf-page-wrapper canvas { display: block; }
+  .stamp {
+    position: absolute; width: 120px; height: 120px;
+    border: 3px dashed #e53e3e; background: rgba(229,62,62,0.12);
+    border-radius: 8px; cursor: move; z-index: 10;
+    user-select: none; touch-action: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .stamp:hover { border-color: #fc8181; box-shadow: 0 0 12px rgba(229,62,62,0.4); }
+  .stamp.dragging { border-color: #63b3ed; background: rgba(99,179,237,0.15); box-shadow: 0 0 16px rgba(99,179,237,0.5); }
+  .stamp img { width: 100%; height: 100%; object-fit: contain; border-radius: 5px; pointer-events: none; }
+  .stamp-hint {
+    position: absolute; bottom: -18px; left: 0; right: 0;
+    text-align: center; font-size: 9px; color: #fc8181;
+    font-weight: 600; pointer-events: none; white-space: nowrap;
+  }
+  .page-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.9); padding: 10px 20px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; z-index: 2001; border-top: 1px solid #333;
+  }
+  .page-nav button { min-width: 38px; }
+  .page-nav .page-info { color: #fff; font-size: 13px; }
+  .page-nav .hint { color: #888; font-size: 11px; margin-left: 15px; }
+  .coord-display {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.75); color: #48bb78;
+    padding: 4px 12px; border-radius: 12px;
+    font-size: 11px; z-index: 2002; font-family: monospace;
+  }
+  .step-indicator { display: flex; justify-content: center; gap: 0; margin-bottom: 20px; }
+  .step-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #dee2e6; color: #6c757d;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; transition: all 0.3s;
+  }
+  .step-circle.active { background: #3182ce; color: #fff; }
+  .step-circle.done { background: #38a169; color: #fff; }
+  .step-line { width: 60px; height: 3px; background: #dee2e6; margin: 0 5px; }
+  .step-line.active { background: #3182ce; }
+  .step-label { font-size: 12px; color: #6c757d; text-align: center; margin-top: 4px; }
+  .step-label.active { color: #3182ce; font-weight: 600; }
+</style>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-pen"></i> Tanda Tangan</h1>
+    <div class="breadcrumb-custom">Upload dokumen dan tandatangani secara digital</div>
+  </div>
+</div>
+
+<% if (typeof message !== 'undefined' && message) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= message %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-circle"></i> <%= error %></div>
+<% } %>
+
+<div class="step-indicator" id="steps">
+  <div class="step-item">
+    <div>
+      <div class="step-circle active" id="step1-circle">1</div>
+      <div class="step-label active" id="step1-label">Upload</div>
+    </div>
+  </div>
+  <div class="step-line" id="line1"></div>
+  <div class="step-item">
+    <div>
+      <div class="step-circle" id="step2-circle">2</div>
+      <div class="step-label" id="step2-label">Pilih Posisi</div>
+    </div>
+  </div>
+  <div class="step-line" id="line2"></div>
+  <div class="step-item">
+    <div>
+      <div class="step-circle" id="step3-circle">3</div>
+      <div class="step-label" id="step3-label">Selesai</div>
+    </div>
+  </div>
+</div>
+
+<div id="step1" class="card card-modern">
+  <div class="card-header-custom">
+    <h5><i class="bi bi-upload"></i> Upload Dokumen & Pilih Penandatangan</h5>
+  </div>
+  <div class="card-body-custom">
+    <% if (keys.length === 0 && signers.length === 0) { %>
+      <div class="alert border-0" style="background:#fffbeb;color:#d97706;border-radius:10px">
+        Belum ada kunci atau signer. <a href="/keys" class="fw-bold">Generate kunci</a> atau <a href="/admin" class="fw-bold">tambah signer</a> terlebih dahulu.
+      </div>
+    <% } else { %>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">File Dokumen</label>
+            <input type="file" id="docFile" class="form-control" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            <div class="form-text">PDF akan dibuka untuk penempatan tanda tangan</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Nama Dokumen</label>
+            <input type="text" id="docName" class="form-control" placeholder="Nama dokumen (opsional)" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            <div class="form-text">Nama yang akan ditampilkan di riwayat dan file signed</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <% if (signers.length > 0) { %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold" style="font-size:13px">Tandatangani Sebagai</label>
+              <select id="signerSelect" class="form-select" onchange="document.getElementById('keySelect').value=''; updateBtnState();" style="border-radius:10px;border:1.5px solid #e2e8f0">
+                <option value="">-- Pilih Signer --</option>
+                <% signers.forEach(s => { %>
+                  <option value="<%= s.id %>"><%= s.display_name %> - <%= s.label %><%= s.organization ? ' (' + s.organization + ')' : '' %></option>
+                <% }) %>
+              </select>
+              <div class="form-text">Pilih identitas penandatangan</div>
+            </div>
+          <% } %>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Kunci Privat</label>
+            <select id="keySelect" class="form-select" onchange="document.getElementById('signerSelect').value=''; updateBtnState();" style="border-radius:10px;border:1.5px solid #e2e8f0">
+              <option value="">-- Pilih Kunci --</option>
+              <% keys.forEach(k => { %>
+                <option value="<%= k.id %>"><%= k.label %> (<%= k.algorithm %>)</option>
+              <% }) %>
+            </select>
+            <div class="form-text">Atau pakai kunci pribadi Anda</div>
+          </div>
+        </div>
+      </div>
+      <button id="btnUpload" class="btn btn-primary-custom text-white w-100" onclick="uploadAndPreview()" disabled>
+        <i class="bi bi-eye"></i> Buka Dokumen & Atur Posisi TTD
+      </button>
+    <% } %>
+  </div>
+</div>
+
+<div id="step2" style="display:none"></div>
+
+<div id="step3" class="card card-modern text-center" style="display:none">
+  <div class="card-body-custom py-5">
+    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+      <i class="bi bi-check-lg" style="font-size:40px;color:#fff"></i>
+    </div>
+    <h3 class="fw-bold" style="color:#059669">Berhasil Ditandatangani!</h3>
+    <p id="resultMsg" class="text-muted"></p>
+    <div class="d-flex gap-2 justify-content-center mt-3">
+      <a href="/sign" class="btn btn-primary-custom text-white"><i class="bi bi-plus-circle"></i> Tanda Tangani Lagi</a>
+      <% if (typeof redirectAfterSign !== 'undefined' && redirectAfterSign) { %>
+        <a href="<%= redirectAfterSign %>" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 20px;font-weight:600"><i class="bi bi-arrow-left"></i> Kembali</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="preview-overlay" id="previewOverlay">
+  <div class="coord-display" id="coordDisplay"></div>
+  <div class="preview-scroll" id="previewScroll">
+    <div id="pdfWrapper"></div>
+  </div>
+  <div class="page-nav">
+    <button class="btn btn-sm btn-light" onclick="prevPage()"><i class="bi bi-chevron-left"></i></button>
+    <span class="page-info" id="pageInfo">Hal 1 / 1</span>
+    <button class="btn btn-sm btn-light" onclick="nextPage()"><i class="bi bi-chevron-right"></i></button>
+    <span class="hint">Klik pada halaman untuk menempatkan TTD, lalu geser ke posisi yang tepat</span>
+    <span class="ms-auto d-flex align-items-center gap-2" id="qrSizeGroup" style="display:none">
+      <label class="text-white-50 small mb-0">Ukuran QR:</label>
+      <input type="range" id="qrSizeSlider" min="40" max="150" value="80" class="form-range" style="width:100px" oninput="document.getElementById('qrSizeVal').textContent=this.value+'pt'; resizeStamp()">
+      <span class="text-white small" id="qrSizeVal">80pt</span>
+    </span>
+    <button class="btn btn-sm btn-danger" onclick="closePreview()"><i class="bi bi-x-lg"></i> Batal</button>
+    <button id="btnApply" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px" onclick="applySignature()" disabled>
+      <i class="bi bi-shield-check"></i> Tanda Tangani
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+
+  let uploadedFilename = '', uploadedOriginalname = '';
+  let totalPages = 1, currentPage = 1;
+  let pdfDoc = null, renderedPages = [];
+  let pageDimensions = {};
+  let stampX = 0, stampY = 0, stampPage = 0, stampPlaced = false;
+  let isDragging = false;
+
+  const fileInput = document.getElementById('docFile');
+  const keySelect = document.getElementById('keySelect');
+  const signerSelect = document.getElementById('signerSelect');
+  const btnUpload = document.getElementById('btnUpload');
+
+  function updateBtnState() {
+    const hasFile = fileInput.files.length > 0;
+    const hasIdentity = (signerSelect && signerSelect.value) || (keySelect && keySelect.value);
+    btnUpload.disabled = !(hasFile && hasIdentity);
+  }
+  window.updateBtnState = updateBtnState;
+
+  fileInput.addEventListener('change', () => {
+    updateBtnState();
+    if (fileInput.files.length) {
+      const f = fileInput.files[0];
+      document.querySelector('.form-text').textContent = `${f.name} (${(f.size/1024/1024).toFixed(2)} MB)`;
+    }
+  });
+  if (keySelect) keySelect.addEventListener('change', updateBtnState);
+  if (signerSelect) signerSelect.addEventListener('change', updateBtnState);
+
+  window.uploadAndPreview = async function() {
+    const hasIdentity = (signerSelect && signerSelect.value) || (keySelect && keySelect.value);
+    if (!fileInput.files.length || !hasIdentity) return;
+    const file = fileInput.files[0];
+    btnUpload.disabled = true;
+    btnUpload.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      const resp = await fetch('/sign/upload-preview', { method: 'POST', body: formData });
+      const data = await resp.json();
+      uploadedFilename = data.filename;
+      uploadedOriginalname = data.originalname;
+
+      const arrayBuffer = await file.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      totalPages = pdfDoc.numPages;
+      currentPage = 1;
+      renderedPages = [];
+      pageDimensions = {};
+
+      goStep(2);
+      showPreview();
+    } catch (e) {
+      alert('Gagal upload: ' + e.message);
+      btnUpload.disabled = false;
+      btnUpload.innerHTML = '<i class="bi bi-eye"></i> Buka Dokumen & Atur Posisi TTD';
+    }
+  };
+
+  function showPreview() {
+    const overlay = document.getElementById('previewOverlay');
+    overlay.classList.add('show');
+    const container = document.getElementById('pdfWrapper');
+    container.innerHTML = '';
+    document.getElementById('pageInfo').textContent = `Hal ${currentPage} / ${totalPages}`;
+
+    const maxW = window.innerWidth - 40;
+    const maxH = window.innerHeight - 100;
+    let baseScale = 1.0;
+
+    (async () => {
+      const firstPage = await pdfDoc.getPage(1);
+      const vp1 = firstPage.getViewport({ scale: 1.0 });
+      const fitW = maxW / vp1.width;
+      const fitH = maxH / vp1.height;
+      baseScale = Math.min(fitW, fitH, 2.0);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const vp = page.getViewport({ scale: baseScale });
+        const vpOrig = page.getViewport({ scale: 1.0 });
+        pageDimensions[i] = { canvasW: vp.width, canvasH: vp.height, pdfW: vpOrig.width, pdfH: vpOrig.height, scale: baseScale };
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.dataset.page = i;
+        wrapper.style.width = vp.width + 'px';
+        wrapper.style.height = vp.height + 'px';
+        wrapper.style.display = i === currentPage ? 'inline-block' : 'none';
+
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        wrapper.appendChild(canvas);
+
+        wrapper.addEventListener('click', (e) => {
+          if (isDragging) return;
+          const rect = wrapper.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          placeStamp(x, y, i, wrapper);
+        });
+
+        container.appendChild(wrapper);
+        renderedPages.push({ wrapper, pageNum: i });
+      }
+    })();
+  }
+
+  function placeStamp(x, y, page, wrapper) {
+    let stamp = document.getElementById('activeStamp');
+    if (stamp) stamp.remove();
+
+    const stampSize = parseInt(document.getElementById('qrSizeSlider').value) || 80;
+
+    stamp = document.createElement('div');
+    stamp.id = 'activeStamp';
+    stamp.className = 'stamp';
+    stamp.style.width = stampSize + 'px';
+    stamp.style.height = stampSize + 'px';
+    stamp.innerHTML = `<img src="data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="%23e53e3e" stroke-width="4"/><circle cx="100" cy="100" r="80" fill="none" stroke="%23e53e3e" stroke-width="2"/><text x="100" y="80" text-anchor="middle" fill="%23e53e3e" font-size="14" font-weight="bold">TANDA TANGAN</text><text x="100" y="105" text-anchor="middle" fill="%23e53e3e" font-size="11">DIGITAL</text><text x="100" y="125" text-anchor="middle" fill="%23e53e3e" font-size="10">RSA-2048</text></svg>')}" alt="TTD"><div class="stamp-hint">Geser untuk reposisi</div>`;
+
+    const left = x - stampSize / 2;
+    const top = y - stampSize / 2;
+    stamp.style.left = left + 'px';
+    stamp.style.top = top + 'px';
+
+    wrapper.appendChild(stamp);
+
+    stampX = left;
+    stampY = top;
+    stampPage = page;
+    stampPlaced = true;
+    document.getElementById('btnApply').disabled = false;
+    document.getElementById('qrSizeGroup').style.display = 'flex';
+    updateCoord(left + stampSize / 2, top + stampSize / 2, page);
+
+    let startX, startY, origLeft, origTop;
+
+    function onPointerDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging = true;
+      stamp.classList.add('dragging');
+      startX = e.clientX || e.touches?.[0]?.clientX;
+      startY = e.clientY || e.touches?.[0]?.clientY;
+      origLeft = parseInt(stamp.style.left) || 0;
+      origTop = parseInt(stamp.style.top) || 0;
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', onPointerUp);
+    }
+
+    function onPointerMove(e) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newLeft = origLeft + dx;
+      const newTop = origTop + dy;
+      stamp.style.left = newLeft + 'px';
+      stamp.style.top = newTop + 'px';
+      stampX = newLeft;
+      stampY = newTop;
+      updateCoord(newLeft + stampSize / 2, newTop + stampSize / 2, stampPage);
+    }
+
+    function onPointerUp() {
+      stamp.classList.remove('dragging');
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      setTimeout(() => { isDragging = false; }, 50);
+    }
+
+    stamp.addEventListener('pointerdown', onPointerDown);
+  }
+
+  function updateCoord(x, y, page) {
+    const dim = pageDimensions[page];
+    if (!dim) return;
+    const pdfX = (x * dim.pdfW / dim.canvasW).toFixed(0);
+    const pdfY = (y * dim.pdfH / dim.canvasH).toFixed(0);
+    const display = document.getElementById('coordDisplay');
+    display.style.display = 'block';
+    display.textContent = `Posisi: ${Math.round(x)}, ${Math.round(y)}px  |  PDF: ${pdfX}, ${pdfY} pt  |  Hal ${page}`;
+  }
+
+  window.prevPage = function() {
+    if (currentPage <= 1) return;
+    renderedPages.forEach(p => p.wrapper.style.display = 'none');
+    currentPage--;
+    renderedPages.find(p => p.pageNum === currentPage).wrapper.style.display = 'inline-block';
+    document.getElementById('pageInfo').textContent = `Hal ${currentPage} / ${totalPages}`;
+    clearStamp();
+  };
+
+  window.nextPage = function() {
+    if (currentPage >= totalPages) return;
+    renderedPages.forEach(p => p.wrapper.style.display = 'none');
+    currentPage++;
+    renderedPages.find(p => p.pageNum === currentPage).wrapper.style.display = 'inline-block';
+    document.getElementById('pageInfo').textContent = `Hal ${currentPage} / ${totalPages}`;
+    clearStamp();
+  };
+
+  function clearStamp() {
+    const s = document.getElementById('activeStamp');
+    if (s) s.remove();
+    stampPlaced = false;
+    document.getElementById('btnApply').disabled = true;
+    document.getElementById('qrSizeGroup').style.display = 'none';
+  }
+
+  window.resizeStamp = function() {
+    const stamp = document.getElementById('activeStamp');
+    if (!stamp) return;
+    const size = parseInt(document.getElementById('qrSizeSlider').value) || 80;
+    const oldW = parseInt(stamp.style.width) || 120;
+    const oldH = parseInt(stamp.style.height) || 120;
+    const oldL = parseInt(stamp.style.left) || 0;
+    const oldT = parseInt(stamp.style.top) || 0;
+    stamp.style.width = size + 'px';
+    stamp.style.height = size + 'px';
+    stamp.style.left = (oldL + (oldW - size) / 2) + 'px';
+    stamp.style.top = (oldT + (oldH - size) / 2) + 'px';
+    stampX = parseInt(stamp.style.left);
+    stampY = parseInt(stamp.style.top);
+  };
+
+  window.closePreview = function() {
+    document.getElementById('previewOverlay').classList.remove('show');
+    clearStamp();
+  };
+
+  window.applySignature = async function() {
+    if (!stampPlaced || !uploadedFilename) return;
+    const btn = document.getElementById('btnApply');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Proses...';
+
+    try {
+      const resp = await fetch('/sign/apply-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: uploadedFilename,
+          originalname: uploadedOriginalname,
+          display_name: document.getElementById('docName').value || '',
+          key_id: keySelect ? keySelect.value : '',
+          signer_id: (signerSelect && signerSelect.value) ? signerSelect.value : '',
+          page_num: stampPage - 1,
+          pos_x: stampX,
+          pos_y: stampY,
+          canvas_w: pageDimensions[stampPage].canvasW,
+          canvas_h: pageDimensions[stampPage].canvasH,
+          pdf_w: pageDimensions[stampPage].pdfW,
+          pdf_h: pageDimensions[stampPage].pdfH,
+          qr_size: parseInt(document.getElementById('qrSizeSlider').value) || 80,
+          guest_doc_id: '<%= typeof guestDocId !== 'undefined' ? guestDocId : '' %>'
+        })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        document.getElementById('previewOverlay').classList.remove('show');
+        goStep(3);
+        document.getElementById('resultMsg').innerHTML = data.message + '<br><a href="' + data.sign_url + '" target="_blank" style="color:#3b82f6">' + data.sign_url + '</a>';
+      } else {
+        alert('Gagal: ' + (data.error || 'Unknown'));
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-shield-check"></i> Tanda Tangani';
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-shield-check"></i> Tanda Tangani';
+    }
+  };
+
+  window.goStep = function(step) {
+    document.getElementById('step1').style.display = step === 1 ? '' : 'none';
+    document.getElementById('step2').style.display = step === 2 ? '' : 'none';
+    document.getElementById('step3').style.display = step === 3 ? '' : 'none';
+    const hs = document.getElementById('historySection'); if (hs) hs.style.display = step === 1 ? '' : 'none';
+    for (let i = 1; i <= 3; i++) {
+      const c = document.getElementById('step' + i + '-circle');
+      const l = document.getElementById('step' + i + '-label');
+      c.classList.remove('active', 'done');
+      l.classList.remove('active');
+      if (i < step) { c.classList.add('done'); c.textContent = '\u2713'; }
+      else if (i === step) { c.classList.add('active'); l.classList.add('active'); }
+      else { c.textContent = i; }
+    }
+    document.getElementById('line1').classList.toggle('active', 1 < step);
+    document.getElementById('line2').classList.toggle('active', 2 < step);
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePreview();
+  });
+
+  <% if (typeof preload !== 'undefined' && preload) { %>
+  (async function autoPreload() {
+    uploadedFilename = '<%= preload.replace(/'/g, "\\'") %>';
+    uploadedOriginalname = '<%= (preloadName || 'document.pdf').replace(/'/g, "\\'") %>';
+    document.querySelector('.form-text').textContent = uploadedOriginalname + ' (pre-loaded)';
+    <% if (typeof preloadSignerId !== 'undefined' && preloadSignerId) { %>
+    if (signerSelect) { signerSelect.value = '<%= (''+preloadSignerId).replace(/'/g, "\\'") %>'; updateBtnState(); }
+    <% } %>
+    const isPdf = uploadedOriginalname.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      document.getElementById('btnUpload').disabled = false;
+      document.getElementById('btnUpload').innerHTML = '<i class="bi bi-shield-check"></i> Tanda Tangani Langsung';
+      document.getElementById('btnUpload').onclick = async function() {
+        document.getElementById('btnUpload').disabled = true;
+        document.getElementById('btnUpload').innerHTML = '<span class="spinner-border spinner-border-sm"></span> Proses...';
+        try {
+          const resp = await fetch('/sign/apply-sign', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              filename: uploadedFilename, originalname: uploadedOriginalname,
+              display_name: document.getElementById('docName').value || '',
+              key_id: keySelect ? keySelect.value : '',
+              signer_id: (signerSelect && signerSelect.value) ? signerSelect.value : '',
+              page_num: 0, pos_x: 0, pos_y: 0, canvas_w: 100, canvas_h: 100, pdf_w: 100, pdf_h: 100, qr_size: 80,
+              guest_doc_id: '<%= typeof guestDocId !== 'undefined' ? guestDocId : '' %>'
+            })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            goStep(3);
+            document.getElementById('resultMsg').innerHTML = data.message + '<br><a href="' + data.sign_url + '" target="_blank" style="color:#3b82f6">' + data.sign_url + '</a>';
+            <% if (typeof redirectAfterSign !== 'undefined' && redirectAfterSign) { %>
+            document.querySelector('#step3 a.btn-outline-secondary')?.setAttribute('href', '<%= redirectAfterSign.replace(/'/g, "\\'") %>');
+            <% } %>
+          } else { alert('Gagal: ' + (data.error || 'Unknown')); location.reload(); }
+        } catch(e) { alert('Error: ' + e.message); location.reload(); }
+      };
+      return;
+    }
+    try {
+      const resp = await fetch('/sign/preview/' + uploadedFilename);
+      if (!resp.ok) { alert('File tidak ditemukan atau sesi habis (status ' + resp.status + ')'); location.reload(); return; }
+      const blob = await resp.blob();
+      if (blob.size === 0) { alert('File kosong (0 bytes)'); location.reload(); return; }
+      const arrayBuffer = await blob.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      totalPages = pdfDoc.numPages;
+      currentPage = 1;
+      renderedPages = [];
+      pageDimensions = {};
+      goStep(2);
+      showPreview();
+    } catch(e) {
+      alert('Gagal memuat file: ' + e.message + '. Coba upload manual.');
+    }
+  })();
+  <% } %>
+</script>
+
+<%- include('partials/footer') %>

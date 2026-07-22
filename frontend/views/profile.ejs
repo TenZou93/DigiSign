@@ -1,0 +1,91 @@
+<%- include('partials/header', { pageTitle: 'Profil', activePage: 'profile' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-person-gear"></i> Edit Profil</h1>
+    <div class="breadcrumb-custom">Perbarui informasi profil dan penandatangan Anda</div>
+  </div>
+</div>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= success %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-triangle"></i> <%= error %></div>
+<% } %>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card card-modern mb-4">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-person-badge"></i> Informasi Profil</h5>
+      </div>
+      <div class="card-body-custom">
+        <form method="POST" action="/profile">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Username</label>
+              <input type="text" class="form-control" value="<%= user.username %>" disabled style="border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc">
+              <div class="form-text">Username tidak dapat diubah</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Nama Penandatangan <span class="text-danger">*</span></label>
+              <input type="text" name="display_name" class="form-control" value="<%= user.display_name %>" required style="border-radius:10px;border:1.5px solid #e2e8f0">
+              <div class="form-text">Nama ini muncul di tanda tangan digital</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Email</label>
+              <input type="email" name="email" class="form-control" value="<%= user.email || '' %>" placeholder="email@contoh.com" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px">Telepon</label>
+              <input type="text" name="phone" class="form-control" value="<%= user.phone || '' %>" placeholder="08xxxxxxxxxx" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" style="font-size:13px">Organisasi / Instansi</label>
+              <input type="text" name="organization" class="form-control" value="<%= user.organization || '' %>" placeholder="PT. Contoh / Universitas ABC" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+          </div>
+
+          <hr style="border-color:#f1f5f9;margin:24px 0">
+          <h6 class="mb-3 fw-bold"><i class="bi bi-lock"></i> Ubah Password <small class="text-muted fw-normal">(opsional)</small></h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" style="font-size:13px">Password Saat Ini</label>
+              <input type="password" name="current_password" class="form-control" autocomplete="current-password" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" style="font-size:13px">Password Baru</label>
+              <input type="password" name="new_password" class="form-control" minlength="6" autocomplete="new-password" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" style="font-size:13px">Konfirmasi Password Baru</label>
+              <input type="password" name="confirm_password" class="form-control" autocomplete="new-password" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary-custom text-white"><i class="bi bi-check-lg"></i> Simpan Perubahan</button>
+            <a href="/dashboard" class="btn ms-2" style="border:1.5px solid #e2e8f0;border-radius:10px;color:#64748b">Batal</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-info-circle"></i> Info Akun</h5>
+      </div>
+      <div class="card-body-custom">
+        <div class="row g-3">
+          <div class="col-sm-4 fw-semibold" style="color:#64748b;font-size:13px">User ID:</div>
+          <div class="col-sm-8" style="font-size:13px"><%= user.id %></div>
+          <div class="col-sm-4 fw-semibold" style="color:#64748b;font-size:13px">Terdaftar:</div>
+          <div class="col-sm-8" style="font-size:13px"><%= user.created_at %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

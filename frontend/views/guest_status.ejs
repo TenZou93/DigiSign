@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cek Status - <%= settings.site_name || 'DigiSign' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <% const pc = (settings.primary_color || '#3b82f6').startsWith('#') ? settings.primary_color || '#3b82f6' : '#' + (settings.primary_color || '3b82f6'); %>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#f1f5f9,#e2e8f0); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { max-width:440px; width:100%; margin:20px; border:none; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.1); overflow:hidden; background:#fff; }
+    .card-header { background:linear-gradient(135deg,#0f172a,#1e293b); padding:28px; text-align:center; color:#fff; }
+    .card-header .icon { width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,<%= pc %>,<%= pc %>dd);display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:8px; }
+    .card-header h4 { font-size:18px; font-weight:700; margin:0; }
+    .card-body { padding:28px; }
+    .form-control { border-radius:10px; border:1.5px solid #e2e8f0; padding:12px 14px; font-size:18px; font-weight:700; letter-spacing:3px; text-align:center; font-family:monospace; text-transform:uppercase; }
+    .btn-primary { background:<%= pc %>; border:none; border-radius:10px; padding:11px; font-weight:600; }
+    .btn-primary:hover { opacity:0.9; }
+    .alert-custom { border-radius:10px; padding:10px 16px; font-size:13px; }
+    .alert-custom.error { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+    .back-link { text-align:center; margin-top:16px; font-size:13px; }
+    .back-link a { color:<%= pc %>; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="icon"><i class="bi bi-search"></i></div>
+      <h4>Cek Status Dokumen</h4>
+      <p style="color:#94a3b8;font-size:12px;margin:4px 0 0">Masukkan nomor tracking Anda</p>
+    </div>
+    <div class="card-body">
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert-custom error mb-3"><i class="bi bi-exclamation-triangle-fill"></i> <%= error %></div>
+      <% } %>
+      <form method="POST" action="/guest/status">
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Nomor Tracking</label>
+          <input type="text" name="tracking_code" class="form-control" placeholder="XXXXXXX" required maxlength="10" autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-primary text-white w-100"><i class="bi bi-search"></i> Cek Status</button>
+      </form>
+      <div class="back-link"><a href="/"><i class="bi bi-arrow-left"></i> Kembali ke Beranda</a></div>
+    </div>
+  </div>
+</body>
+</html>

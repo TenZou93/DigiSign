@@ -1,0 +1,118 @@
+<%- include('partials/header', { pageTitle: 'Verifikasi', activePage: 'verify' }) %>
+
+<style>
+  .upload-area {
+    border: 3px dashed #cbd5e0; border-radius: 16px; padding: 60px 20px;
+    text-align: center; cursor: pointer; transition: all 0.3s; background: #fff;
+  }
+  .upload-area:hover, .upload-area.dragover { border-color: #3b82f6; background: #eff6ff; }
+  .upload-area i { font-size: 4rem; color: #a0aec0; }
+  .upload-area.dragover i { color: #3b82f6; }
+  .result-card { border-radius: 16px; overflow: hidden; }
+  .result-header { padding: 30px; text-align: center; color: #fff; }
+  .result-header.valid { background: linear-gradient(135deg, #10b981, #059669); }
+  .result-header.invalid { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .result-header.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .detail-grid { display: grid; grid-template-columns: 160px 1fr; gap: 0; }
+  .detail-grid .label { padding: 12px 16px; background: #f8fafc; font-weight: 600; color: #475569; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+  .detail-grid .value { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; word-break: break-all; }
+  .hash-text { font-family: 'Courier New', monospace; font-size: 0.78rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; }
+  .spinner-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+</style>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-patch-check"></i> Verifikasi Tanda Tangan</h1>
+    <div class="breadcrumb-custom">Upload dokumen yang sudah ditandatangani untuk memverifikasi keasliannya</div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div id="uploadSection">
+      <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <h4 class="mt-3 mb-2 fw-bold">Upload Dokumen</h4>
+        <p class="text-muted mb-0">Klik atau seret file ke sini</p>
+        <p class="text-muted small">Format: PDF, DOCX, TXT, PNG, JPG</p>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+
+    <div id="resultSection" style="display:none"></div>
+  </div>
+</div>
+
+<div class="spinner-overlay" id="spinner" style="display:none">
+  <div class="text-center text-white">
+    <div class="spinner-border spinner-border-lg mb-3" style="width:4rem;height:4rem"></div>
+    <h5>Memverifikasi dokumen...</h5>
+  </div>
+</div>
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+
+  async function handleFile(file) {
+    if (!file) return;
+    document.getElementById('spinner').style.display = 'flex';
+
+    const formData = new FormData();
+    formData.append('document', file);
+
+    try {
+      const resp = await fetch('/verify/check', { method: 'POST', body: formData });
+      const data = await resp.json();
+      showResult(data, file.name);
+    } catch (e) {
+      showResult({ valid: false, status: 'error', message: 'Gagal memverifikasi: ' + e.message, details: [] }, file.name);
+    }
+    document.getElementById('spinner').style.display = 'none';
+  }
+
+  function showResult(data, filename) {
+    document.getElementById('uploadSection').style.display = 'none';
+    const section = document.getElementById('resultSection');
+    section.style.display = 'block';
+
+    let headerClass = 'invalid';
+    let icon = 'bi-x-circle-fill';
+    let title = 'Tanda Tangan TIDAK SAH';
+    if (data.valid) { headerClass = 'valid'; icon = 'bi-check-circle-fill'; title = 'Tanda Tangan SAH'; }
+    else if (data.status === 'warning') { headerClass = 'warning'; icon = 'bi-exclamation-triangle-fill'; title = data.message; }
+
+    let detailsHtml = '';
+    if (data.details && data.details.length) {
+      detailsHtml = '<div class="detail-grid">';
+      data.details.forEach(d => {
+        detailsHtml += `<div class="label">${d.label}</div><div class="value">${d.value}</div>`;
+      });
+      detailsHtml += '</div>';
+    }
+
+    section.innerHTML = `
+      <div class="result-card shadow-sm">
+        <div class="result-header ${headerClass}">
+          <i class="bi ${icon}" style="font-size:4rem"></i>
+          <h3 class="mt-2 mb-0">${title}</h3>
+          <p class="mb-0 opacity-75">${filename}</p>
+        </div>
+        ${detailsHtml}
+      </div>
+      <div class="text-center mt-4">
+        <button class="btn btn-primary-custom text-white btn-lg" onclick="resetForm()"><i class="bi bi-arrow-left"></i> Verifikasi Dokumen Lain</button>
+      </div>
+    `;
+  }
+
+  function resetForm() {
+    document.getElementById('uploadSection').style.display = '';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  }
+</script>
+
+<%- include('partials/footer') %>

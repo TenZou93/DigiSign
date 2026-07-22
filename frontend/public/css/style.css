@@ -1,0 +1,7 @@
+body { background: #f5f7fb; }
+.card { border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.card-header { background: white; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0 !important; }
+.table th { border-top: none; font-weight: 600; color: #555; }
+.navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+.navbar-dark .navbar-nav .nav-link.active { font-weight: 600; }
+.badge { font-weight: 500; padding: 5px 10px; }

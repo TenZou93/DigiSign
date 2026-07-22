@@ -1,0 +1,84 @@
+<%- include('partials/header', { pageTitle: 'Kunci', activePage: 'keys' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-key"></i> Kunci Kriptografi</h1>
+    <div class="breadcrumb-custom">Generate dan kelola pasangan kunci RSA-2048</div>
+  </div>
+</div>
+
+<% if (typeof message !== 'undefined' && message) { %>
+  <div class="alert alert-<%= message.type %> border-0" style="border-radius:10px"><%= message.text %></div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-md-5">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-plus-circle"></i> Generate Kunci Baru</h5>
+      </div>
+      <div class="card-body-custom">
+        <form action="/keys/generate" method="POST">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Label Kunci</label>
+            <input type="text" name="label" class="form-control" placeholder="Contoh: Kunci Utama" value="RSA-2048" style="border-radius:10px;border:1.5px solid #e2e8f0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Algoritma</label>
+            <input type="text" class="form-control" value="RSA-2048 / SHA-256" disabled style="border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc">
+          </div>
+          <button type="submit" class="btn btn-primary-custom text-white w-100">
+            <i class="bi bi-plus-circle"></i> Generate Key Pair
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-list-ul"></i> Daftar Kunci</h5>
+      </div>
+      <div class="card-body-custom">
+        <% if (keys.length === 0) { %>
+          <div class="text-center py-4">
+            <i class="bi bi-key" style="font-size:48px;color:#cbd5e1"></i>
+            <p class="text-muted mt-2">Belum ada kunci. Generate kunci baru untuk memulai.</p>
+          </div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                  <th class="border-0">Label</th>
+                  <th class="border-0">Algoritma</th>
+                  <th class="border-0">Dibuat</th>
+                  <th class="border-0">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% keys.forEach(k => { %>
+                  <tr>
+                    <td class="fw-semibold"><%= k.label %></td>
+                    <td><span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:500"><%= k.algorithm %></span></td>
+                    <td style="color:#64748b;font-size:13px"><%= k.created_at %></td>
+                    <td style="white-space:nowrap">
+                      <a href="/keys/export/<%= k.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:12px" title="Export Public Key">
+                        <i class="bi bi-download"></i> Public Key
+                      </a>
+                      <form action="/keys/delete/<%= k.id %>" method="POST" style="display:inline" onsubmit="return confirm('Hapus kunci ini? Semua tanda tangan terkait akan ikut terhapus.');">
+                        <button type="submit" class="btn btn-sm text-white" style="background:#ef4444;border-radius:8px;font-size:12px"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

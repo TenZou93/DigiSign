@@ -1,0 +1,206 @@
+<%- include('partials/header', { pageTitle: 'Dokumen', activePage: 'documents' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-file-earmark-text"></i> Dokumen</h1>
+    <div class="breadcrumb-custom">Riwayat tanda tangan dan dokumen guest</div>
+  </div>
+</div>
+
+<% if (typeof message !== 'undefined' && message) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= message %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-circle"></i> <%= error %></div>
+<% } %>
+
+<ul class="nav nav-tabs mb-3" id="docTabs">
+  <li class="nav-item"><button class="nav-link active fw-semibold small" data-bs-toggle="tab" data-bs-target="#tabSigned" style="color:#0f172a;border:none;border-bottom:2px solid transparent" onclick="switchTab('signed')"><i class="bi bi-shield-check"></i> Tanda Tangan</button></li>
+  <% if (user.role === 'admin') { %>
+  <li class="nav-item"><button class="nav-link fw-semibold small" data-bs-toggle="tab" data-bs-target="#tabGuest" style="color:#64748b;border:none;border-bottom:2px solid transparent" onclick="switchTab('guest')"><i class="bi bi-inbox"></i> Dokumen Guest</button></li>
+  <% } %>
+</ul>
+
+<div class="tab-content">
+  <div class="tab-pane fade show active" id="tabSigned">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-clock-history"></i> Riwayat Tanda Tangan</h5>
+      </div>
+      <div class="card-body-custom">
+        <% if (signatures.length === 0) { %>
+          <div class="text-center py-4"><i class="bi bi-clock-history" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Belum ada riwayat.</p></div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                  <th class="border-0">Dokumen</th>
+                  <th class="border-0">Kunci</th>
+                  <th class="border-0">Waktu</th>
+                  <th class="border-0">Link Verifikasi</th>
+                  <th class="border-0">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% signatures.forEach(s => { %>
+                  <tr>
+                    <td class="fw-semibold"><%= s.document_name %></td>
+                    <td><span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:500"><%= s.key_label %></span></td>
+                    <td style="color:#64748b;font-size:13px"><%= s.signed_at %></td>
+                    <td>
+                      <% if (s.token) { %>
+                        <a href="/s/<%= s.token %>" target="_blank" class="text-decoration-none small" style="color:#3b82f6"><i class="bi bi-link-45deg"></i> /s/<%= s.token.substring(0, 8) %>...</a>
+                      <% } %>
+                    </td>
+                    <td style="white-space:nowrap">
+                      <% if (s.signed_file) { %>
+                        <a href="/sign/download-signed/<%= s.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:12px"><i class="bi bi-file-earmark"></i> Signed</a>
+                      <% } %>
+                      <a href="/sign/download/<%= s.id %>" class="btn btn-sm" style="border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#64748b"><i class="bi bi-download"></i> JSON</a>
+                      <form method="POST" action="/documents/delete-signature/<%= s.id %>" class="d-inline" onsubmit="return confirm('Hapus riwayat tanda tangan ini?')">
+                        <button class="btn btn-sm" style="border:1.5px solid #fecaca;border-radius:8px;color:#ef4444"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% if (sigTotalPages > 1) { %>
+            <nav class="d-flex justify-content-center mt-3">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <%= sigPage <= 1 ? 'disabled' : '' %>">
+                  <a class="page-link" href="/documents?sig_page=<%= sigPage - 1 %>" style="border-radius:8px 0 0 8px;color:#3b82f6">&laquo;</a>
+                </li>
+                <% for (let p = 1; p <= sigTotalPages; p++) { %>
+                  <li class="page-item <%= p === sigPage ? 'active' : '' %>">
+                    <a class="page-link" href="/documents?sig_page=<%= p %>" style="color:<%= p === sigPage ? '#fff' : '#3b82f6' %>;background:<%= p === sigPage ? '#3b82f6' : '#fff' %>;border:1px solid #e2e8f0"><%= p %></a>
+                  </li>
+                <% } %>
+                <li class="page-item <%= sigPage >= sigTotalPages ? 'disabled' : '' %>">
+                  <a class="page-link" href="/documents?sig_page=<%= sigPage + 1 %>" style="border-radius:0 8px 8px 0;color:#3b82f6">&raquo;</a>
+                </li>
+              </ul>
+            </nav>
+          <% } %>
+          <div class="text-muted small mt-2">Total: <%= sigTotal %> riwayat</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <% if (user.role === 'admin') { %>
+  <div class="tab-pane fade" id="tabGuest">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-inbox"></i> Dokumen Guest</h5>
+      </div>
+      <div class="card-body-custom">
+        <% if (guestDocs.length === 0) { %>
+          <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Belum ada dokumen guest.</p></div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                  <th class="border-0">Tracking</th>
+                  <th class="border-0">Pengirim</th>
+                  <th class="border-0">Dokumen</th>
+                  <th class="border-0">Signer</th>
+                  <th class="border-0">Status</th>
+                  <th class="border-0">Tanggal</th>
+                  <th class="border-0">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% guestDocs.forEach(d => { %>
+                  <tr>
+                    <td><span class="font-monospace fw-bold" style="font-size:12px"><%= d.tracking_code %></span></td>
+                    <td><%= d.guest_name || 'Anonim' %></td>
+                    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= d.originalname %></td>
+                    <td><span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:500"><%= d.signer_name || '-' %></span></td>
+                    <td>
+                      <% const statusLabels = {pending:'Menunggu',approved:'Disetujui',rejected:'Ditolak',signed:'Ditandatangani'}; %>
+                      <% const statusColors = {pending:'#d97706',approved:'#3b82f6',rejected:'#dc2626',signed:'#16a34a'}; %>
+                      <% const statusBgs = {pending:'#fef3c7',approved:'#eff6ff',rejected:'#fef2f2',signed:'#f0fdf4'}; %>
+                      <span class="badge-status <%= d.status %>" style="background:<%= statusBgs[d.status] %>;color:<%= statusColors[d.status] %>;padding:3px 12px;border-radius:20px;font-weight:600;font-size:12px"><%= statusLabels[d.status] || d.status %></span>
+                    </td>
+                    <td style="font-size:12px;color:#64748b"><%= d.created_at %></td>
+                    <td style="white-space:nowrap">
+                      <% if (d.status === 'pending') { %>
+                        <form method="POST" action="/admin/guests/<%= d.id %>/approve" class="d-inline">
+                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
+                          <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-check"></i> Setuju</button>
+                        </form>
+                        <form method="POST" action="/admin/guests/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
+                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
+                          <input type="hidden" name="admin_note" id="rejectNote_<%= d.id %>">
+                          <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:11px;padding:4px 10px" onclick="document.getElementById('rejectNote_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
+                        </form>
+                      <% } else if (d.status === 'approved') { %>
+                        <a href="/admin/guests/<%= d.id %>/sign?_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> TTD</a>
+                        <form method="POST" action="/admin/guests/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
+                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
+                          <input type="hidden" name="admin_note" id="rejectNote2_<%= d.id %>">
+                          <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:11px;padding:4px 10px" onclick="document.getElementById('rejectNote2_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
+                        </form>
+                      <% } else if (d.status === 'signed') { %>
+                        <a href="/guest/download/<%= d.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-download"></i> Signed</a>
+                      <% } else if (d.status === 'rejected') { %>
+                        <span class="small text-muted"><%= d.admin_note || '-' %></span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% if (guestTotalPages > 1) { %>
+            <nav class="d-flex justify-content-center mt-3">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <%= guestPage <= 1 ? 'disabled' : '' %>">
+                  <a class="page-link" href="/documents?guest_page=<%= guestPage - 1 %>" style="border-radius:8px 0 0 8px;color:#3b82f6">&laquo;</a>
+                </li>
+                <% for (let p = 1; p <= guestTotalPages; p++) { %>
+                  <li class="page-item <%= p === guestPage ? 'active' : '' %>">
+                    <a class="page-link" href="/documents?guest_page=<%= p %>" style="color:<%= p === guestPage ? '#fff' : '#3b82f6' %>;background:<%= p === guestPage ? '#3b82f6' : '#fff' %>;border:1px solid #e2e8f0"><%= p %></a>
+                  </li>
+                <% } %>
+                <li class="page-item <%= guestPage >= guestTotalPages ? 'disabled' : '' %>">
+                  <a class="page-link" href="/documents?guest_page=<%= guestPage + 1 %>" style="border-radius:0 8px 8px 0;color:#3b82f6">&raquo;</a>
+                </li>
+              </ul>
+            </nav>
+          <% } %>
+          <div class="text-muted small mt-2">Total: <%= guestTotal %> dokumen</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<style>
+  .nav-tabs .nav-link.active { color:#0f172a !important; border-bottom:2px solid #3b82f6 !important; }
+  .nav-tabs .nav-link:hover { color:#0f172a !important; }
+  .badge-status { padding:3px 12px; border-radius:20px; font-weight:600; font-size:12px; }
+</style>
+
+<script>
+function switchTab(tab) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('tab', tab);
+  window.history.replaceState({}, '', '/documents?' + params.toString());
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab === 'guest') {
+    const btn = document.querySelector('[data-bs-target="#tabGuest"]');
+    if (btn) btn.click();
+  }
+});
+</script>
+
+<%- include('partials/footer') %>

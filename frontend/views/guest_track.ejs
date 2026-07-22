@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Dokumen - <%= settings.site_name || 'DigiSign' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <% const pc = (settings.primary_color || '#3b82f6').startsWith('#') ? settings.primary_color || '#3b82f6' : '#' + (settings.primary_color || '3b82f6'); %>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#f1f5f9,#e2e8f0); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { max-width:520px; width:100%; margin:20px; border:none; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.1); overflow:hidden; background:#fff; }
+    .card-body { padding:32px; }
+    .status-icon { width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:30px; }
+    .status-icon.pending { background:#fef3c7;color:#d97706; }
+    .status-icon.approved { background:#dbeafe;color:#2563eb; }
+    .status-icon.rejected { background:#fef2f2;color:#dc2626; }
+    .status-icon.signed { background:#f0fdf4;color:#16a34a; }
+    .info-table { width:100%; }
+    .info-table td { padding:8px 0; font-size:14px; border-bottom:1px solid #f1f5f9; }
+    .info-table td:first-child { color:#64748b; width:120px; }
+    .info-table td:last-child { font-weight:500; color:#0f172a; }
+    .badge-status { padding:4px 14px; border-radius:20px; font-weight:600; font-size:13px; }
+    .badge-status.pending { background:#fef3c7;color:#d97706; }
+    .badge-status.approved { background:#dbeafe;color:#2563eb; }
+    .badge-status.rejected { background:#fef2f2;color:#dc2626; }
+    .badge-status.signed { background:#f0fdf4;color:#16a34a; }
+    .btn-download { background:<%= pc %>; border:none; border-radius:10px; padding:10px 24px; font-weight:600; color:#fff; text-decoration:none; display:inline-block; }
+    .btn-download:hover { opacity:0.9; }
+    .back-link { text-align:center; margin-top:16px; }
+    .back-link a { color:<%= pc %>; text-decoration:none; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-body">
+      <% 
+        let statusLabel = 'Pending'; let icon = 'clock'; let cls = 'pending';
+        if (doc.status === 'approved') { statusLabel = 'Disetujui'; icon = 'check-circle'; cls = 'approved'; }
+        else if (doc.status === 'rejected') { statusLabel = 'Ditolak'; icon = 'x-circle'; cls = 'rejected'; }
+        else if (doc.status === 'signed') { statusLabel = 'Ditandatangani'; icon = 'shield-check'; cls = 'signed'; }
+      %>
+      <div class="text-center">
+        <div class="status-icon <%= cls %>"><i class="bi bi-<%= icon %>"></i></div>
+        <h4 class="fw-bold mb-1">Status: <span class="badge-status <%= cls %>"><%= statusLabel %></span></h4>
+        <p class="text-muted small">Dokumen: <%= doc.originalname %></p>
+      </div>
+
+      <hr style="margin:20px 0;border-color:#f1f5f9">
+
+      <table class="info-table">
+        <tr><td>No. Tracking</td><td style="font-family:monospace;font-weight:700;letter-spacing:2px;color:<%= pc %>"><%= doc.tracking_code %></td></tr>
+        <tr><td>Pengirim</td><td><%= doc.guest_name || 'Anonim' %></td></tr>
+        <% if (doc.guest_email) { %><tr><td>Email</td><td><%= doc.guest_email %></td></tr><% } %>
+        <tr><td>Penandatangan</td><td><%= doc.signer_name || 'Belum ditentukan' %></td></tr>
+        <tr><td>Tanggal Upload</td><td><%= doc.created_at %></td></tr>
+        <% if (doc.status === 'rejected' && doc.admin_note) { %>
+          <tr><td>Alasan</td><td style="color:#dc2626"><%= doc.admin_note %></td></tr>
+        <% } %>
+        <% if (doc.status === 'signed') { %>
+          <tr><td>Status</td><td style="color:#16a34a;font-weight:600">Dokumen sudah ditandatangani</td></tr>
+        <% } %>
+      </table>
+
+      <% if (doc.status === 'signed' && signedPath) { %>
+        <div class="text-center mt-4">
+          <a href="/guest/download/<%= doc.tracking_code %>" class="btn-download"><i class="bi bi-download"></i> Download Dokumen</a>
+        </div>
+      <% } %>
+
+      <% if (doc.status === 'pending') { %>
+        <div class="text-center mt-3">
+          <div class="alert" style="background:#fffbeb;color:#d97706;border-radius:10px;border:none;font-size:13px">
+            <i class="bi bi-info-circle"></i> Dokumen Anda sedang menunggu verifikasi admin.
+          </div>
+        </div>
+      <% } %>
+
+      <% if (doc.status === 'rejected') { %>
+        <div class="text-center mt-3">
+          <a href="/" class="btn text-white" style="background:<%= pc %>;border:none;border-radius:10px;padding:10px 24px;font-weight:600;text-decoration:none"><i class="bi bi-cloud-upload"></i> Upload Ulang</a>
+        </div>
+      <% } %>
+
+      <div class="back-link"><a href="/guest/status"><i class="bi bi-arrow-left"></i> Cek Tracking Lain</a></div>
+    </div>
+  </div>
+</body>
+</html>

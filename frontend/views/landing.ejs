@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= settings.site_name || 'DigiSign' %> - Tanda Tangan Digital</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <% const pc = (settings.primary_color || '#3b82f6').startsWith('#') ? settings.primary_color || '#3b82f6' : '#' + (settings.primary_color || '3b82f6'); %>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:#f8fafc; min-height:100vh; }
+    .navbar-landing { background:#0f172a; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; position:fixed; top:0; left:0; right:0; z-index:1000; }
+    .navbar-landing .brand { display:flex; align-items:center; gap:10px; color:#fff; text-decoration:none; }
+    .navbar-landing .brand-icon { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,<%= pc %>,<%= pc %>dd); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .navbar-landing .brand-text { font-size:18px; font-weight:700; }
+    .navbar-landing .login-btn { color:#fff; text-decoration:none; padding:8px 20px; border-radius:8px; background:<%= pc %>; font-weight:500; font-size:14px; transition:all 0.2s; cursor:pointer; border:none; }
+    .navbar-landing .login-btn:hover { opacity:0.9; }
+    .hero-section { min-height:100vh; display:flex; align-items:center; padding:80px 32px 40px; background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%); }
+    .hero-content { display:flex; gap:40px; align-items:center; width:100%; max-width:1200px; margin:0 auto; }
+    .hero-left { flex:1; color:#fff; min-width:0; }
+    .hero-left h1 { font-size:38px; font-weight:800; line-height:1.15; margin-bottom:20px; }
+    .hero-left h1 span { color:<%= pc %>; }
+    .carousel { border-radius:16px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+    .carousel-inner { border-radius:16px; }
+    .carousel-item { padding:0; }
+    .carousel-slide-content { padding:36px 32px; background:linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02)); min-height:200px; display:flex; flex-direction:column; justify-content:center; }
+    .carousel-slide-content .slide-icon-wrap { width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,<%= pc %>22,<%= pc %>11);display:flex;align-items:center;justify-content:center;font-size:24px;color:<%= pc %>;margin-bottom:14px; }
+    .carousel-slide-content h5 { font-size:17px;font-weight:700;margin-bottom:6px; }
+    .carousel-slide-content p { font-size:13px;color:#94a3b8;line-height:1.6;margin:0;max-width:400px; }
+    .carousel-indicators { position:static; margin:0; padding:10px 24px 18px; background:rgba(0,0,0,0.2); justify-content:center; gap:6px; }
+    .carousel-indicators button { width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.25);border:2px solid transparent;margin:0;opacity:1;transition:all 0.3s; }
+    .carousel-indicators button.active { width:28px;border-radius:6px;background:<%= pc %>; }
+    .carousel-control-prev,.carousel-control-next { width:auto;padding:0 8px;opacity:0.6; }
+    .carousel-control-prev:hover,.carousel-control-next:hover { opacity:1; }
+    .hero-right { flex:0 0 400px; }
+    .guest-card { background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+    .guest-card .guest-header { background:linear-gradient(135deg,#0f172a,#1e293b); padding:18px 24px; text-align:center; color:#fff; }
+    .guest-card .guest-header .gi { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,<%= pc %>,<%= pc %>dd); display:inline-flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:4px; }
+    .guest-card .guest-header h5 { font-size:15px; font-weight:700; margin:0; }
+    .guest-card .guest-body { padding:18px; }
+    .guest-card .form-control-sm, .guest-card .form-select-sm { font-size:12px; padding:7px 10px; border-radius:8px; border:1.5px solid #e2e8f0; }
+    .guest-card .btn-submit { background:<%= pc %>; border:none; border-radius:8px; padding:9px; font-weight:600; color:#fff; transition:all 0.2s; width:100%; font-size:12px; }
+    .guest-card .btn-submit:hover { opacity:0.9; }
+    .guest-card .track-btn { border:1.5px solid #e2e8f0; border-radius:8px; padding:8px; font-weight:500; color:#64748b; width:100%; font-size:12px; background:#fff; transition:all 0.2s; cursor:pointer; }
+    .guest-card .track-btn:hover { border-color:<%= pc %>; color:<%= pc %>; }
+    .features-strip { padding:28px; background:#fff; }
+    .features-strip .container { max-width:1000px; margin:0 auto; display:flex; gap:20px; justify-content:center; flex-wrap:wrap; }
+    .features-strip .feat { text-align:center; flex:1; min-width:120px; }
+    .features-strip .feat i { font-size:22px; color:<%= pc %>; margin-bottom:4px; }
+    .features-strip .feat h6 { font-size:12px; font-weight:600; color:#0f172a; margin:0; }
+    .features-strip .feat p { font-size:11px; color:#64748b; margin:2px 0 0; }
+    .footer-landing { padding:18px; text-align:center; font-size:12px; color:#64748b; background:#f8fafc; }
+    @media (max-width:991px) { .hero-content { flex-direction:column; } .hero-right { flex:1; width:100%; max-width:400px; } .hero-left h1 { font-size:26px; } .navbar-landing { padding:12px 16px; } .hero-section { padding:70px 16px 30px; } }
+    .modal-content { border-radius:14px; border:none; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+    .modal-header { border-bottom:1px solid #f1f5f9; padding:14px 18px; }
+    .modal-header .modal-title { font-size:15px; }
+    .modal-body { padding:18px; }
+    .result-icon { width:48px;height:48px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:22px; }
+    .result-icon.pending { background:#fef3c7;color:#d97706; }
+    .result-icon.signed { background:#f0fdf4;color:#16a34a; }
+    .result-icon.rejected { background:#fef2f2;color:#dc2626; }
+    .badge-status { padding:2px 10px; border-radius:20px; font-weight:600; font-size:11px; }
+    .badge-status.pending { background:#fef3c7;color:#d97706; }
+    .badge-status.signed { background:#f0fdf4;color:#16a34a; }
+    .badge-status.rejected { background:#fef2f2;color:#dc2626; }
+    .alert-form { border-radius:8px; padding:8px 12px; font-size:12px; }
+    .alert-form.success { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .alert-form.error { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+    .modal-input { border-radius:8px; border:1.5px solid #e2e8f0; padding:8px 12px; font-size:13px; }
+    .modal-input:focus { border-color:<%= pc %>; box-shadow:0 0 0 3px <%= pc %>22; }
+    .modal-btn { border-radius:8px; padding:8px; font-weight:600; font-size:13px; border:none; }
+  </style>
+</head>
+<body>
+  <nav class="navbar-landing">
+    <a href="/" class="brand">
+      <div class="brand-icon"><i class="bi bi-shield-check"></i></div>
+      <span class="brand-text"><%= settings.logo_text || 'DigiSign' %></span>
+    </a>
+    <button class="login-btn" onclick="openLoginModal()"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+  </nav>
+
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-left">
+        <h1>Tanda Tangan Digital<br><span>Tanpa Ribet</span></h1>
+        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+          <div class="carousel-inner">
+            <div class="carousel-item active">
+              <div class="carousel-slide-content">
+                <div class="slide-icon-wrap"><i class="bi bi-cloud-upload"></i></div>
+                <h5>Upload Dokumen</h5>
+                <p>Unggah file PDF Anda dan pilih penandatangan yang dituju. Proses cepat dan aman dengan enkripsi SSL.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="carousel-slide-content">
+                <div class="slide-icon-wrap"><i class="bi bi-shield-check"></i></div>
+                <h5>Tanda Tangan Digital</h5>
+                <p>Admin akan memverifikasi dan menandatangani dokumen Anda dengan sertifikat digital PAdES yang valid dan terpercaya.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="carousel-slide-content">
+                <div class="slide-icon-wrap"><i class="bi bi-download"></i></div>
+                <h5>Download & Verifikasi</h5>
+                <p>Lacak status dokumen Anda dengan nomor tracking, download file yang sudah ditandatangani, dan verifikasi keasliannya.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="carousel-slide-content">
+                <div class="slide-icon-wrap"><i class="bi bi-qr-code"></i></div>
+                <h5>QR Code Verification</h5>
+                <p>Setiap tanda tangan dilengkapi QR code yang dapat discan untuk verifikasi cepat dan mudah kapan saja.</p>
+              </div>
+            </div>
+          </div>
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3"></button>
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><i class="bi bi-chevron-left" style="font-size:22px;color:#fff"></i></button>
+          <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><i class="bi bi-chevron-right" style="font-size:22px;color:#fff"></i></button>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="guest-card">
+          <div class="guest-header">
+            <div class="gi"><i class="bi bi-shield-check"></i></div>
+            <h5>Upload Dokumen</h5>
+          </div>
+          <div class="guest-body">
+            <% if (typeof message !== 'undefined' && message) { %><div class="alert-form success mb-2"><i class="bi bi-check-circle-fill"></i> <%= message %></div><% } %>
+            <% if (typeof error !== 'undefined' && error) { %><div class="alert-form error mb-2"><i class="bi bi-exclamation-triangle-fill"></i> <%= error %></div><% } %>
+            <form method="POST" action="/guest/upload" enctype="multipart/form-data" onsubmit="document.querySelector('.btn-submit').disabled=true;document.querySelector('.btn-submit').innerHTML='<span class=spinner-border spinner-border-sm></span> Mengunggah...'">
+              <div class="mb-2"><input type="text" name="guest_name" class="form-control form-control-sm" placeholder="Nama Anda"></div>
+              <div class="mb-2"><input type="email" name="guest_email" class="form-control form-control-sm" placeholder="Email"></div>
+              <div class="mb-2"><input type="text" name="document_name" class="form-control form-control-sm" placeholder="Nama Dokumen (biarkan kosong untuk pakai nama file)"></div>
+              <div class="mb-2"><input type="file" name="document" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" required></div>
+              <div class="mb-2">
+                <select name="signer_id" class="form-select form-select-sm">
+                  <option value="">-- Pilih Penandatangan --</option>
+                  <% (typeof signers !== 'undefined' ? signers : []).forEach(s => { %>
+                    <option value="<%= s.id %>"><%= s.display_name %><%= s.organization ? ' (' + s.organization + ')' : '' %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-submit mb-2"><i class="bi bi-cloud-upload"></i> Upload Dokumen</button>
+            </form>
+            <button class="track-btn" onclick="openTrackModal()"><i class="bi bi-search"></i> Cek Status Dokumen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="features-strip">
+    <div class="container">
+      <div class="feat"><i class="bi bi-shield-lock"></i><h6>Aman & Terpercaya</h6><p>Sertifikat PAdES</p></div>
+      <div class="feat"><i class="bi bi-qr-code"></i><h6>QR Code</h6><p>Verifikasi scan</p></div>
+      <div class="feat"><i class="bi bi-clock"></i><h6>Cepat</h6><p>Proses otomatis</p></div>
+      <div class="feat"><i class="bi bi-file-earmark-pdf"></i><h6>PDF Support</h6><p>Format standar</p></div>
+    </div>
+  </div>
+
+  <div class="footer-landing">&copy; <%= new Date().getFullYear() %> <%= settings.site_name || 'DigiSign' %>. All rights reserved.</div>
+
+  <!-- Modal Cek Status -->
+  <div class="modal fade" id="trackModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-search"></i> Cek Status</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="trackInputView">
+            <p class="text-muted small mb-2">Masukkan nomor tracking dokumen Anda.</p>
+            <input type="text" id="trackCode" class="form-control modal-input mb-2" placeholder="Contoh: A1B2C3D4" maxlength="10" style="text-align:center;font-family:monospace;font-weight:700;letter-spacing:3px;text-transform:uppercase" onkeydown="if(event.key==='Enter')doTrack()">
+            <button class="btn text-white w-100 modal-btn" style="background:<%= pc %>" onclick="doTrack()"><i class="bi bi-search"></i> Cek Sekarang</button>
+          </div>
+          <div id="trackLoading" style="display:none" class="text-center py-4"><div class="spinner-border" style="width:2rem;height:2rem;color:<%= pc %>"></div><p class="text-muted small mt-2">Mencari dokumen...</p></div>
+          <div id="trackResultView" style="display:none">
+            <div class="text-center mb-3"><div id="resultIcon" class="result-icon mx-auto"></div><h6 class="fw-bold mt-2 mb-0" id="resultStatus"></h6><p class="text-muted small mb-0" id="resultDocName"></p></div>
+            <div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+              <table class="table table-sm table-borderless mb-0" style="font-size:12px">
+                <tr><td class="text-muted" style="width:90px">No. Tracking</td><td class="fw-bold font-monospace" id="rCode"></td></tr>
+                <tr><td class="text-muted">Pengirim</td><td id="rName"></td></tr>
+                <tr><td class="text-muted">Penandatangan</td><td id="rSigner"></td></tr>
+                <tr><td class="text-muted">Tanggal</td><td id="rDate"></td></tr>
+                <tr id="rNoteRow" style="display:none"><td class="text-muted">Catatan</td><td style="color:#dc2626" id="rNote"></td></tr>
+              </table>
+            </div>
+            <div id="resultActions" class="text-center mt-3"></div>
+            <div class="text-center mt-2"><a href="javascript:void(0)" onclick="resetTrack()" class="small" style="color:<%= pc %>">Cek nomor lain</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Login -->
+  <div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-in-right"></i> Login</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div id="loginError" class="alert-form error mb-2" style="display:none"></div>
+          <div class="mb-2"><input type="text" id="loginUser" class="form-control modal-input" placeholder="Username"></div>
+          <div class="mb-3"><input type="password" id="loginPass" class="form-control modal-input" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <button class="btn text-white w-100 modal-btn" style="background:<%= pc %>" onclick="doLogin()"><i class="bi bi-box-arrow-in-right"></i> Masuk</button>
+          <div class="text-center mt-3"><a href="/auth/register" class="small" style="color:<%= pc %>">Belum punya akun? Daftar</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Success -->
+  <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px">
+      <div class="modal-content">
+        <div class="modal-body p-4 text-center">
+          <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="bi bi-check-lg" style="font-size:30px;color:#fff"></i></div>
+          <h6 class="fw-bold" style="color:#059669">Upload Berhasil!</h6>
+          <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:10px;padding:12px;margin:12px 0">
+            <div class="small text-muted">Nomor Tracking</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:4px;color:<%= pc %>;font-family:monospace" id="trackCodeDisplay"></div>
+          </div>
+          <div class="d-flex gap-2 justify-content-center">
+            <button class="btn text-white btn-sm" style="background:<%= pc %>;border:none;border-radius:8px;padding:6px 14px;font-weight:600;font-size:12px" onclick="showTrackResult()"><i class="bi bi-eye"></i> Lihat Status</button>
+            <button class="btn btn-sm" style="border:1.5px solid #e2e8f0;border-radius:8px;color:#64748b;padding:6px 14px;font-size:12px" data-bs-dismiss="modal">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Track
+    let lastTrackCode = '';
+    function openTrackModal() { resetTrack(); new bootstrap.Modal(document.getElementById('trackModal')).show(); }
+    async function doTrack() {
+      const code = document.getElementById('trackCode').value.trim().toUpperCase();
+      if (!code) return;
+      document.getElementById('trackInputView').style.display = 'none';
+      document.getElementById('trackLoading').style.display = '';
+      try {
+        const r = await fetch('/guest/api/track/' + encodeURIComponent(code));
+        const d = await r.json();
+        document.getElementById('trackLoading').style.display = 'none';
+        if (d.error) { document.getElementById('trackInputView').style.display = ''; alert(d.error); return; }
+        showResult(d);
+      } catch(e) { document.getElementById('trackLoading').style.display = 'none'; document.getElementById('trackInputView').style.display = ''; alert('Gagal'); }
+    }
+    function showResult(d) {
+      document.getElementById('trackResultView').style.display = '';
+      const ri = document.getElementById('resultIcon');
+      const icons = {pending:'clock',approved:'check-circle',rejected:'x-circle',signed:'shield-check'};
+      const labels = {pending:'Menunggu',approved:'Disetujui',rejected:'Ditolak',signed:'Ditandatangani'};
+      ri.className = 'result-icon ' + (d.status||'pending');
+      ri.innerHTML = '<i class="bi bi-' + (icons[d.status]||'clock') + '"></i>';
+      document.getElementById('resultStatus').innerHTML = 'Status: <span class="badge-status ' + d.status + '">' + (labels[d.status]||d.status) + '</span>';
+      document.getElementById('resultDocName').textContent = d.originalname||'';
+      document.getElementById('rCode').textContent = d.tracking_code;
+      document.getElementById('rName').textContent = d.guest_name||'Anonim';
+      document.getElementById('rSigner').textContent = d.signer_name||'-';
+      document.getElementById('rDate').textContent = d.created_at||'';
+      if (d.admin_note) { document.getElementById('rNoteRow').style.display = ''; document.getElementById('rNote').textContent = d.admin_note; }
+      else { document.getElementById('rNoteRow').style.display = 'none'; }
+      const act = document.getElementById('resultActions');
+      act.innerHTML = '';
+      if (d.status === 'signed' && d.download_url) act.innerHTML = '<a href="' + d.download_url + '" class="btn text-white btn-sm" style="background:<%= pc %>;border:none;border-radius:8px;padding:5px 14px;font-weight:600;font-size:12px"><i class="bi bi-download"></i> Download</a>';
+      else if (d.status === 'pending') act.innerHTML = '<div class="alert py-2 px-3 mb-0" style="background:#fffbeb;color:#d97706;border-radius:8px;border:none;font-size:12px"><i class="bi bi-info-circle"></i> Menunggu verifikasi admin.</div>';
+      else if (d.status === 'rejected') act.innerHTML = '<a href="/" class="btn text-white btn-sm" style="background:<%= pc %>;border:none;border-radius:8px;padding:5px 14px;font-weight:600;font-size:12px"><i class="bi bi-cloud-upload"></i> Upload Ulang</a>';
+      lastTrackCode = d.tracking_code;
+    }
+    function resetTrack() { document.getElementById('trackInputView').style.display = ''; document.getElementById('trackResultView').style.display = 'none'; document.getElementById('trackCode').value = ''; }
+    function showTrackResult() { bootstrap.Modal.getInstance(document.getElementById('successModal')).hide(); openTrackModal(); if (lastTrackCode) { document.getElementById('trackCode').value = lastTrackCode; doTrack(); } }
+
+    // Login
+    function openLoginModal() { document.getElementById('loginError').style.display = 'none'; new bootstrap.Modal(document.getElementById('loginModal')).show(); }
+    async function doLogin() {
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+      if (!u || !p) return;
+      const errEl = document.getElementById('loginError');
+      try {
+        const r = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) });
+        const data = await r.json();
+        if (data.redirect) { window.location.href = data.redirect; }
+        else { errEl.textContent = data.error || 'Login gagal'; errEl.style.display = ''; }
+      } catch(e) { errEl.textContent = 'Koneksi error'; errEl.style.display = ''; }
+    }
+
+    // Auto show success modal
+    <% if (typeof successCode !== 'undefined' && successCode) { %>
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('trackCodeDisplay').textContent = '<%= successCode %>';
+        lastTrackCode = '<%= successCode %>';
+        new bootstrap.Modal(document.getElementById('successModal')).show();
+      });
+    <% } %>
+  </script>
+</body>
+</html>

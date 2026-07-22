@@ -1,0 +1,131 @@
+<%- include('partials/header', { pageTitle: 'Pengaturan Aplikasi', activePage: 'admin_settings' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-gear-fill"></i> Pengaturan Aplikasi</h1>
+    <div class="breadcrumb-custom">Ubah nama aplikasi, logo, warna tema, dan menu</div>
+  </div>
+</div>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= success %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-triangle"></i> <%= error %></div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-sliders"></i> Pengaturan Umum</h5>
+      </div>
+      <div class="card-body-custom">
+        <form method="POST" action="/admin/settings" id="settingsForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Nama Aplikasi</label>
+            <input type="text" name="site_name" class="form-control" value="<%= settings.site_name || 'DigiSign' %>" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            <div class="form-text">Nama yang ditampilkan di judul halaman dan sidebar</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Teks Logo</label>
+            <input type="text" name="logo_text" class="form-control" value="<%= settings.logo_text || 'DigiSign' %>" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            <div class="form-text">Teks yang ditampilkan di samping logo sidebar</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Logo (file)</label>
+            <input type="file" name="logo_file" class="form-control" accept="image/*" style="border-radius:10px;border:1.5px solid #e2e8f0">
+            <% if (settings.logo_url) { %>
+              <div class="mt-1 d-flex align-items-center gap-2">
+                <img src="<%= settings.logo_url %>" style="height:30px;border-radius:6px" alt="logo">
+                <span class="small text-muted">Logo saat ini</span>
+              </div>
+            <% } %>
+            <div class="form-text">Upload file gambar logo. Biarkan kosong jika tidak ingin mengubah.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px">Warna Primer (HEX)</label>
+            <div class="input-group" style="border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0">
+              <input type="text" name="primary_color" id="primaryColorInput" class="form-control" value="<%= settings.primary_color || '#3b82f6' %>" style="border:none;border-radius:0;font-family:monospace" placeholder="#3b82f6">
+              <input type="color" class="form-control form-control-color" id="primaryColorPicker" value="<%= settings.primary_color || '#3b82f6' %>" style="max-width:50px;padding:4px;border:none;cursor:pointer">
+            </div>
+            <div class="form-text">Warna tema untuk tombol dan aksen. Klik kotak warna untuk pilih.</div>
+            <div class="mt-2 d-flex align-items-center gap-2">
+              <span>Pratinjau:</span>
+              <button type="button" class="btn text-white fw-semibold" id="previewBtn" style="border-radius:10px;padding:6px 16px;font-size:13px">Tombol Utama</button>
+              <span class="badge" id="previewBadge" style="border-radius:6px;font-weight:500;padding:6px 12px">Badge</span>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card card-modern">
+      <div class="card-header-custom">
+        <h5><i class="bi bi-list"></i> Menu Navigasi</h5>
+      </div>
+      <div class="card-body-custom">
+        <p class="text-muted small">
+          <strong>Format JSON:</strong> <code>[{"id":"dashboard","label":"Dashboard","icon":"grid-1x2","section":"Menu Utama","url":"/dashboard","admin":false}, ...]</code>
+          <br>Label kosong = disembunyikan. Admin <code>true</code> hanya untuk admin.
+        </p>
+        <% 
+          let menuStr = settings.menu_items || '';
+          if (!menuStr) {
+            menuStr = JSON.stringify([
+              {id:'dashboard', label:'Dashboard', icon:'grid-1x2', section:'Menu Utama', url:'/dashboard', admin:false},
+              {id:'keys', label:'Kunci Kriptografi', icon:'key', section:'Menu Utama', url:'/keys', admin:false},
+              {id:'sign', label:'Tanda Tangan', icon:'pen', section:'Menu Utama', url:'/sign', admin:false},
+              {id:'verify', label:'Verifikasi', icon:'patch-check', section:'Menu Utama', url:'/verify', admin:false},
+              {id:'documents', label:'Dokumen', icon:'file-earmark-text', section:'Menu Utama', url:'/documents', admin:false},
+              {id:'admin', label:'Kelola Signer', icon:'people', section:'Admin', url:'/admin', admin:true},
+              {id:'admin_settings', label:'Pengaturan', icon:'gear', section:'Admin', url:'/admin/settings', admin:true},
+              {id:'profile', label:'Profil', icon:'person-gear', section:'Akun', url:'/profile', admin:false}
+            ], null, 2);
+          }
+        %>
+        <textarea name="menu_items" class="form-control font-monospace" rows="14" style="border-radius:8px;border:1.5px solid #e2e8f0;font-size:11px"><%= menuStr %></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3">
+  <button type="submit" class="btn text-white w-100" id="saveSettingsBtn" style="background:<%= settings.primary_color || '#3b82f6' %>;border-radius:10px;font-weight:600;padding:10px">
+    <i class="bi bi-save"></i> Simpan Semua Pengaturan
+  </button>
+</div>
+</form>
+
+<script>
+  const pcInput = document.getElementById('primaryColorInput');
+  const pcPicker = document.getElementById('primaryColorPicker');
+  const previewBtn = document.getElementById('previewBtn');
+  const previewBadge = document.getElementById('previewBadge');
+
+  function updatePreview(color) {
+    let c = color || '#3b82f6';
+    if (!c.startsWith('#')) c = '#' + c;
+    previewBtn.style.background = c;
+    previewBadge.style.background = c;
+    previewBadge.style.color = '#fff';
+    previewBadge.textContent = c;
+  }
+
+  pcInput.addEventListener('input', function() {
+    let val = this.value.trim();
+    if (val && !val.startsWith('#')) val = '#' + val;
+    pcPicker.value = val || '#3b82f6';
+    updatePreview(val);
+  });
+
+  pcPicker.addEventListener('input', function() {
+    pcInput.value = this.value;
+    updatePreview(this.value);
+  });
+
+  updatePreview(pcInput.value);
+</script>
+
+<%- include('partials/footer') %>

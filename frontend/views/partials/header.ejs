@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' - ' : '' %><%= settings.site_name || 'DigiSign' %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+    <% 
+      const pc = (settings.primary_color || '#3b82f6').startsWith('#') ? settings.primary_color || '#3b82f6' : '#' + (settings.primary_color || '3b82f6');
+    %>
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 260px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      color: #fff; z-index: 1000; display: flex; flex-direction: column;
+      transition: transform 0.3s ease;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+    .sidebar-brand {
+      padding: 24px 20px; display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-brand .brand-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, <%= pc %>, <%= pc %>dd);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    }
+    .sidebar-brand .brand-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .sidebar-brand .brand-sub { font-size: 10px; color: #94a3b8; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; }
+
+    .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+    .sidebar-nav .nav-section {
+      font-size: 10px; font-weight: 600; color: #64748b;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      padding: 8px 12px 6px; margin-top: 8px;
+    }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 10px;
+      color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 500;
+      transition: all 0.2s; margin-bottom: 2px;
+    }
+    .sidebar-nav a i { font-size: 18px; width: 22px; text-align: center; }
+    .sidebar-nav a:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, <%= pc %>33, <%= pc %>15);
+      color: <%= pc %>; box-shadow: inset 3px 0 0 <%= pc %>;
+    }
+    .sidebar-nav a.active i { color: <%= pc %>; }
+
+    .sidebar-footer {
+      padding: 16px 16px 20px; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-footer .user-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+    }
+    .sidebar-footer .user-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, <%= pc %>, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; color: #fff;
+    }
+    .sidebar-footer .user-name { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+    .sidebar-footer .user-role { font-size: 11px; color: #64748b; }
+    .sidebar-footer .logout-btn {
+      display: block; width: 100%; margin-top: 8px; padding: 8px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: #94a3b8; font-size: 12px;
+      cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none;
+    }
+    .sidebar-footer .logout-btn:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+
+    .main-content { margin-left: 260px; min-height: 100vh; padding: 28px 32px; }
+
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .top-bar h1 { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0; }
+    .top-bar .breadcrumb-custom { font-size: 13px; color: #64748b; }
+
+    .card-modern {
+      border: none; border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      background: #fff; overflow: hidden;
+    }
+    .card-modern .card-header-custom {
+      padding: 18px 24px; border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-modern .card-header-custom h5 { margin: 0; font-size: 15px; font-weight: 600; color: #0f172a; }
+    .card-modern .card-body-custom { padding: 24px; }
+
+    .btn-primary-custom {
+      background: <%= pc %>; border: none;
+      border-radius: 10px; padding: 10px 20px; font-weight: 600;
+      box-shadow: 0 4px 12px <%= pc %>4d;
+      transition: all 0.2s;
+    }
+    .btn-primary-custom:hover { transform: translateY(-1px); box-shadow: 0 6px 16px <%= pc %>66; }
+
+    .sidebar-toggle { display: none; }
+
+    @media (max-width: 991px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.show { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px 16px; }
+      .sidebar-toggle { display: block; }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+      .sidebar-overlay.show { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="bi bi-shield-check"></i></div>
+      <div>
+        <div class="brand-text"><%= settings.logo_text || 'DigiSign' %></div>
+        <div class="brand-sub">Digital Signature</div>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <% 
+        let menuItems = [];
+        try { menuItems = JSON.parse(settings.menu_items || '[]'); } catch(e) {}
+        if (menuItems.length === 0) {
+          menuItems = [
+            {id:'dashboard', label:'Dashboard', icon:'grid-1x2', section:'Menu Utama', url:'/dashboard', admin:false},
+            {id:'keys', label:'Kunci Kriptografi', icon:'key', section:'Menu Utama', url:'/keys', admin:false},
+            {id:'sign', label:'Tanda Tangan', icon:'pen', section:'Menu Utama', url:'/sign', admin:false},
+            {id:'verify', label:'Verifikasi', icon:'patch-check', section:'Menu Utama', url:'/verify', admin:false},
+            {id:'documents', label:'Dokumen', icon:'file-earmark-text', section:'Menu Utama', url:'/documents', admin:false},
+            {id:'admin', label:'Kelola Signer', icon:'people', section:'Admin', url:'/admin', admin:true},
+            {id:'admin_settings', label:'Pengaturan', icon:'gear', section:'Admin', url:'/admin/settings', admin:true},
+            {id:'profile', label:'Profil', icon:'person-gear', section:'Akun', url:'/profile', admin:false}
+          ];
+        }
+        let currentSection = '';
+        menuItems.forEach(item => {
+          if (item.admin && (!user || user.role !== 'admin')) return;
+          if (!item.label) return;
+          if (item.section && item.section !== currentSection) {
+            currentSection = item.section;
+      %>
+        <div class="nav-section"><%= currentSection %></div>
+      <% } %>
+      <a href="<%= item.url %>" class="<%= typeof activePage !== 'undefined' && activePage === item.id ? 'active' : '' %>">
+        <i class="bi bi-<%= item.icon || 'circle' %>"></i> <%= item.label %>
+      </a>
+      <% }); %>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar"><%= user.display_name.charAt(0).toUpperCase() %></div>
+        <div>
+          <div class="user-name"><%= user.display_name %></div>
+          <div class="user-role"><%= user.role === 'admin' ? 'Administrator' : 'User' %></div>
+        </div>
+      </div>
+      <a href="/auth/logout" class="logout-btn"><i class="bi bi-box-arrow-left"></i> Logout</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <button class="btn btn-sm btn-outline-secondary sidebar-toggle" onclick="toggleSidebar()" style="position:fixed;top:16px;left:16px;z-index:998;">
+      <i class="bi bi-list" style="font-size:20px"></i>
+    </button>

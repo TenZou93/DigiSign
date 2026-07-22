@@ -1,0 +1,23 @@
+{
+  "name": "digital-signature-app",
+  "version": "1.0.0",
+  "description": "Sistem Tanda Tangan Digital",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@signpdf/signer-p12": "^3.3.0",
+    "@signpdf/signpdf": "^3.3.0",
+    "ejs": "^3.1.10",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
+    "node-forge": "^1.4.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.4.168",
+    "qrcode": "^1.5.4",
+    "sql.js": "^1.10.0",
+    "uuid": "^9.0.0"
+  }
+}
