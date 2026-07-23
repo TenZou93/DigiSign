@@ -1,0 +1,66 @@
+<%- include('partials/header', { pageTitle: 'Surat Saya', activePage: 'documents' }) %>
+<div class="container-fluid py-4 px-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-file-earmark-text" style="font-size:24px;color:#3b82f6"></i>
+    <h5 class="mb-0 fw-bold">Surat untuk Saya</h5>
+  </div>
+  <% if (error) { %><div class="alert alert-danger small"><%= error %></div><% } %>
+  <% if (message) { %><div class="alert alert-success small"><%= message %></div><% } %>
+  <div class="card" style="border:1.5px solid #e2e8f0;border-radius:12px">
+    <div class="card-body p-3">
+      <% if (letters.length === 0) { %>
+        <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Tidak ada surat untuk Anda.</p></div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size:12px">
+            <thead>
+              <tr style="text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                <th class="border-0">Tracking</th>
+                <th class="border-0">Jenis</th>
+                <th class="border-0">Pengirim</th>
+                <th class="border-0">Status</th>
+                <th class="border-0">Tanggal</th>
+                <th class="border-0">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% letters.forEach(d => { %>
+                <tr>
+                  <td><span class="font-monospace fw-bold"><%= d.tracking_code %></span></td>
+                  <td><%= d.template_name %></td>
+                  <td><%= d.guest_name || '-' %></td>
+                  <td>
+                    <span class="badge" style="background:<%= {pending:'#fef3c7',approved:'#eff6ff',signed:'#f0fdf4'}[d.status] || '#f1f5f9' %>;color:<%= {pending:'#d97706',approved:'#3b82f6',signed:'#16a34a'}[d.status] || '#64748b' %>;padding:3px 10px;border-radius:20px;font-weight:600"><%= {pending:'Menunggu',approved:'Siap TTD',signed:'Ditandatangani'}[d.status] || d.status %></span>
+                  </td>
+                  <td style="color:#64748b"><%= d.created_at %></td>
+                  <td>
+                    <% if (d.status === 'approved') { %>
+                      <a href="/surat/sign/<%= d.id %>?_redirect=/surat/my" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:10px;padding:3px 10px;border:none"><i class="bi bi-pen"></i> Tanda Tangani</a>
+                    <% } else if (d.status === 'signed') { %>
+                      <a href="/surat/download/<%= d.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:10px;padding:3px 10px;border:none"><i class="bi bi-download"></i> Download</a>
+                    <% } else { %>
+                      <span class="text-muted small">Menunggu admin</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% if (totalPages > 1) { %>
+          <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item <%= page <= 1 ? 'disabled' : '' %>"><a class="page-link" href="/surat/my?page=<%= page - 1 %>" style="color:#3b82f6">&laquo;</a></li>
+              <% for (let p = 1; p <= totalPages; p++) { %>
+                <li class="page-item <%= p === page ? 'active' : '' %>"><a class="page-link" href="/surat/my?page=<%= p %>" style="color:<%= p === page ? '#fff' : '#3b82f6' %>;background:<%= p === page ? '#3b82f6' : '#fff' %>"><%= p %></a></li>
+              <% } %>
+              <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>"><a class="page-link" href="/surat/my?page=<%= page + 1 %>" style="color:#3b82f6">&raquo;</a></li>
+            </ul>
+          </nav>
+        <% } %>
+        <div class="text-muted small mt-2">Total: <%= total %> surat</div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

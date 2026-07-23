@@ -159,6 +159,69 @@ async function initDB() {
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN tracking_code TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN document_name TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN signed_file TEXT'); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().exec(`
+    CREATE TABLE IF NOT EXISTS letter_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT UNIQUE NOT NULL,
+      description TEXT,
+      form_fields TEXT NOT NULL,
+      styles TEXT,
+      default_margins TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `); } catch (e) {}
+  try { getWrapper().exec(`
+    CREATE TABLE IF NOT EXISTS generated_letters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      template_id INTEGER NOT NULL,
+      tracking_code TEXT NOT NULL,
+      guest_name TEXT,
+      guest_email TEXT,
+      guest_phone TEXT,
+      field_data TEXT NOT NULL,
+      filename TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      signer_id INTEGER,
+      signature_id INTEGER,
+      signed_file TEXT,
+      admin_note TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (template_id) REFERENCES letter_templates(id),
+      FOREIGN KEY (signer_id) REFERENCES signers(id),
+      FOREIGN KEY (signature_id) REFERENCES signatures(id)
+    );
+  `); } catch (e) {}
+  // Seed default template if none exist
+  try {
+    const count = getWrapper().prepare('SELECT COUNT(*) as c FROM letter_templates').get().c;
+    if (count === 0) {
+      const defaultTemplate = {
+        name: 'Surat Keterangan Kuliah',
+        code: 'suket-kuliah',
+        description: 'Surat keterangan aktif kuliah untuk mahasiswa',
+        form_fields: JSON.stringify([
+          { name: 'nama', label: 'Nama Lengkap', type: 'text', required: true },
+          { name: 'nim', label: 'NIM', type: 'text', required: true },
+          { name: 'prodi', label: 'Program Studi', type: 'text', required: true },
+          { name: 'semester', label: 'Semester', type: 'text', required: true },
+          { name: 'keperluan', label: 'Keperluan', type: 'textarea', required: true }
+        ]),
+        styles: JSON.stringify({
+          header: { fontSize: 14, bold: true, alignment: 'center' },
+          subheader: { fontSize: 10, alignment: 'center' },
+          body: { fontSize: 11, lineHeight: 1.5 },
+          label: { fontSize: 11, bold: true },
+          signature: { fontSize: 11, alignment: 'center', margin: [0, 30, 0, 0] }
+        }),
+        default_margins: JSON.stringify([60, 40, 60, 40])
+      };
+      getWrapper().run(
+        'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins) VALUES (?, ?, ?, ?, ?, ?)',
+        [defaultTemplate.name, defaultTemplate.code, defaultTemplate.description, defaultTemplate.form_fields, defaultTemplate.styles, defaultTemplate.default_margins]
+      );
+    }
+  } catch (e) { console.error('Seed template error:', e.message); }
   return getWrapper();
 }
 

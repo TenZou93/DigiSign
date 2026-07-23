@@ -1,0 +1,92 @@
+<%- include('partials/header', { pageTitle: 'Surat Terisi', activePage: 'admin' }) %>
+<div class="container-fluid py-4 px-4">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-file-earmark-text" style="font-size:24px;color:#3b82f6"></i>
+    <h5 class="mb-0 fw-bold">Surat Terisi (Guest)</h5>
+  </div>
+  <% if (error) { %><div class="alert alert-danger small"><%= error %></div><% } %>
+  <% if (message) { %><div class="alert alert-success small"><%= message %></div><% } %>
+  <div class="card" style="border:1.5px solid #e2e8f0;border-radius:12px">
+    <div class="card-body p-3">
+      <% if (letters.length === 0) { %>
+        <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Belum ada surat.</p></div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size:12px">
+            <thead>
+              <tr style="text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+                <th class="border-0">Tracking</th>
+                <th class="border-0">Jenis</th>
+                <th class="border-0">Pengirim</th>
+                <th class="border-0">Data</th>
+                <th class="border-0">Status</th>
+                <th class="border-0">Tanggal</th>
+                <th class="border-0">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% letters.forEach(d => { %>
+                <tr>
+                  <td><span class="font-monospace fw-bold"><%= d.tracking_code %></span></td>
+                  <td><%= d.template_name %></td>
+                  <td><%= d.guest_name || '-' %></td>
+                  <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    <% try { %>
+                      <%= Object.values(JSON.parse(d.field_data || '{}')).join(', ') %>
+                    <% } catch(e) { %>-<% } %>
+                  </td>
+                  <td>
+                    <% const s = d.status; %>
+                    <span class="badge" style="background:<%= {pending:'#fef3c7',approved:'#eff6ff',rejected:'#fef2f2',signed:'#f0fdf4'}[s] %>;color:<%= {pending:'#d97706',approved:'#3b82f6',rejected:'#dc2626',signed:'#16a34a'}[s] %>;padding:3px 10px;border-radius:20px;font-weight:600"><%= {pending:'Menunggu',approved:'Disetujui',rejected:'Ditolak',signed:'Ditandatangani'}[s] || s %></span>
+                  </td>
+                  <td style="color:#64748b"><%= d.created_at %></td>
+                  <td style="white-space:nowrap">
+                    <% if (d.status === 'pending') { %>
+                      <form method="POST" action="/surat/admin/<%= d.id %>/approve" class="d-inline">
+                        <input type="hidden" name="_redirect" value="/surat/admin/list">
+                        <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border-radius:8px;font-size:10px;padding:3px 8px;border:none"><i class="bi bi-check"></i> Setuju</button>
+                      </form>
+                      <form method="POST" action="/surat/admin/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
+                        <input type="hidden" name="_redirect" value="/surat/admin/list">
+                        <input type="hidden" name="admin_note" id="rnote_<%= d.id %>">
+                        <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:10px;padding:3px 8px" onclick="document.getElementById('rnote_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
+                      </form>
+                      <form method="POST" action="/surat/admin/<%= d.id %>/assign-signer" class="d-inline">
+                        <input type="hidden" name="signer_id" id="signer_<%= d.id %>">
+                        <button class="btn btn-sm" style="border:1.5px solid #cbd5e1;border-radius:8px;font-size:10px;padding:3px 8px" onclick="const v=prompt('ID Signer:'); if(v){document.getElementById('signer_<%= d.id %>').value=v;return true;}return false;"><i class="bi bi-person"></i> Signer</button>
+                      </form>
+                    <% } else if (d.status === 'approved') { %>
+                      <a href="/surat/sign/<%= d.id %>?_redirect=/surat/admin/list" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:10px;padding:3px 8px;border:none"><i class="bi bi-pen"></i> TTD</a>
+                      <form method="POST" action="/surat/admin/<%= d.id %>/reject" class="d-inline">
+                        <input type="hidden" name="_redirect" value="/surat/admin/list">
+                        <input type="hidden" name="admin_note" id="rnote2_<%= d.id %>">
+                        <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:10px;padding:3px 8px" onclick="document.getElementById('rnote2_<%= d.id %>').value=prompt('Alasan:');return true"><i class="bi bi-x"></i> Tolak</button>
+                      </form>
+                    <% } else if (d.status === 'signed') { %>
+                      <a href="/surat/download/<%= d.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:10px;padding:3px 8px;border:none"><i class="bi bi-download"></i> Download</a>
+                    <% } else if (d.status === 'rejected') { %>
+                      <span class="small text-muted"><%= d.admin_note || '-' %></span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% if (totalPages > 1) { %>
+          <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item <%= page <= 1 ? 'disabled' : '' %>"><a class="page-link" href="/surat/admin/list?page=<%= page - 1 %>" style="color:#3b82f6">&laquo;</a></li>
+              <% for (let p = 1; p <= totalPages; p++) { %>
+                <li class="page-item <%= p === page ? 'active' : '' %>"><a class="page-link" href="/surat/admin/list?page=<%= p %>" style="color:<%= p === page ? '#fff' : '#3b82f6' %>;background:<%= p === page ? '#3b82f6' : '#fff' %>"><%= p %></a></li>
+              <% } %>
+              <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>"><a class="page-link" href="/surat/admin/list?page=<%= page + 1 %>" style="color:#3b82f6">&raquo;</a></li>
+            </ul>
+          </nav>
+        <% } %>
+        <div class="text-muted small mt-2">Total: <%= total %> surat</div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

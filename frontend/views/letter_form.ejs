@@ -1,0 +1,48 @@
+<%- include('partials/header', { pageTitle: template.name, activePage: 'home' }) %>
+<div class="container py-4" style="max-width:700px">
+  <a href="/surat/templates" class="btn btn-sm btn-outline-secondary mb-3" style="border-radius:8px"><i class="bi bi-arrow-left"></i> Pilih Surat Lain</a>
+  <div class="card" style="border:1.5px solid #e2e8f0;border-radius:14px">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div style="width:48px;height:48px;background:#eff6ff;border-radius:12px;display:flex;align-items:center;justify-content:center">
+          <i class="bi bi-file-text" style="font-size:22px;color:#3b82f6"></i>
+        </div>
+        <div>
+          <h5 class="fw-bold mb-0"><%= template.name %></h5>
+          <p class="text-muted mb-0" style="font-size:12px"><%= template.description %></p>
+        </div>
+      </div>
+      <% if (error) { %><div class="alert alert-danger small"><%= error %></div><% } %>
+      <form method="POST" action="/surat/templates/<%= template.code %>/generate">
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Nama Anda <span class="text-danger">*</span></label>
+          <input type="text" name="guest_name" class="form-control" placeholder="Nama lengkap" style="border-radius:10px;border:1.5px solid #e2e8f0" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Email (opsional)</label>
+          <input type="email" name="guest_email" class="form-control" placeholder="email@contoh.com" style="border-radius:10px;border:1.5px solid #e2e8f0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">No. HP (opsional)</label>
+          <input type="text" name="guest_phone" class="form-control" placeholder="08xxxxxxxxxx" style="border-radius:10px;border:1.5px solid #e2e8f0">
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-3">Data Mahasiswa</h6>
+        <% formFields.forEach(f => { %>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small"><%= f.label %> <% if (f.required) { %><span class="text-danger">*</span><% } %></label>
+            <% if (f.type === 'textarea') { %>
+              <textarea name="<%= f.name %>" class="form-control" rows="3" placeholder="<%= f.label %>" style="border-radius:10px;border:1.5px solid #e2e8f0" <%= f.required ? 'required' : '' %>></textarea>
+            <% } else { %>
+              <input type="<%= f.type === 'number' ? 'number' : 'text' %>" name="<%= f.name %>" class="form-control" placeholder="<%= f.label %>" style="border-radius:10px;border:1.5px solid #e2e8f0" <%= f.required ? 'required' : '' %>>
+            <% } %>
+          </div>
+        <% }) %>
+        <button type="submit" class="btn btn-primary w-100 fw-semibold" style="border-radius:10px;padding:10px;background:#3b82f6;border:none">
+          <i class="bi bi-send"></i> Buat & Kirim Surat
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

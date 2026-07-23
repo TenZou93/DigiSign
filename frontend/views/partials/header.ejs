@@ -141,9 +141,12 @@
             {id:'keys', label:'Kunci Kriptografi', icon:'key', section:'Menu Utama', url:'/keys', admin:false},
             {id:'sign', label:'Tanda Tangan', icon:'pen', section:'Menu Utama', url:'/sign', admin:false},
             {id:'verify', label:'Verifikasi', icon:'patch-check', section:'Menu Utama', url:'/verify', admin:false},
+            {id:'surat', label:'Buat Surat', icon:'file-earmark-text', section:'Menu Utama', url:'/surat/templates', admin:false},
+            {id:'my_letters', label:'Surat Saya', icon:'file-earmark-check', section:'Menu Utama', url:'/surat/my', admin:false},
             {id:'documents', label:'Dokumen', icon:'file-earmark-text', section:'Menu Utama', url:'/documents', admin:false},
             {id:'admin', label:'Kelola Signer', icon:'people', section:'Admin', url:'/admin', admin:true},
             {id:'admin_users', label:'Kelola User', icon:'person-badge', section:'Admin', url:'/admin/users', admin:true},
+            {id:'admin_letters', label:'Surat Masuk', icon:'inbox', section:'Admin', url:'/surat/admin/list', admin:true},
             {id:'admin_settings', label:'Pengaturan', icon:'gear', section:'Admin', url:'/admin/settings', admin:true},
             {id:'profile', label:'Profil', icon:'person-gear', section:'Akun', url:'/profile', admin:false}
           ];
@@ -162,6 +165,7 @@
       </a>
       <% }); %>
     </div>
+    <% if (user) { %>
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="user-avatar"><%= user.display_name.charAt(0).toUpperCase() %></div>
@@ -172,6 +176,7 @@
       </div>
       <a href="/auth/logout" class="logout-btn"><i class="bi bi-box-arrow-left"></i> Logout</a>
     </div>
+    <% } %>
   </nav>
 
   <div class="main-content">

@@ -395,8 +395,14 @@ router.post('/apply-sign', upload.none(), async (req, res) => {
 
         const sigId = db.prepare('SELECT MAX(id) as id FROM signatures').get()?.id || 0;
         if (req.body.guest_doc_id) {
-          db.prepare("UPDATE guest_docs SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
-            .run(sigId, signedFilename, req.body.guest_doc_id);
+          if (String(req.body.guest_doc_id).startsWith('letter_')) {
+            const letterId = parseInt(String(req.body.guest_doc_id).replace('letter_', ''));
+            db.prepare("UPDATE generated_letters SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
+              .run(sigId, signedFilename, letterId);
+          } else {
+            db.prepare("UPDATE guest_docs SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
+              .run(sigId, signedFilename, req.body.guest_doc_id);
+          }
         }
 
         try { fs.unlinkSync(qrPath); } catch (e) {}
@@ -423,8 +429,14 @@ router.post('/apply-sign', upload.none(), async (req, res) => {
 
       const sigId2 = db.prepare('SELECT MAX(id) as id FROM signatures').get()?.id || 0;
       if (req.body.guest_doc_id) {
-        db.prepare("UPDATE guest_docs SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
-          .run(sigId2, signedFilename, req.body.guest_doc_id);
+        if (String(req.body.guest_doc_id).startsWith('letter_')) {
+          const letterId = parseInt(String(req.body.guest_doc_id).replace('letter_', ''));
+          db.prepare("UPDATE generated_letters SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
+            .run(sigId2, signedFilename, letterId);
+        } else {
+          db.prepare("UPDATE guest_docs SET status = 'signed', signature_id = ?, signed_file = ? WHERE id = ?")
+            .run(sigId2, signedFilename, req.body.guest_doc_id);
+        }
       }
 
       try { fs.unlinkSync(qrPath); } catch (e) {}

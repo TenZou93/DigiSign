@@ -11,6 +11,7 @@ const verifyRoutes = require('./routes/verify');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 const guestRoutes = require('./routes/guest');
+const letterRoutes = require('./routes/letters');
 
 const app = express();
 const PORT = process.env.PORT || 3009;
@@ -48,6 +49,7 @@ app.use('/sign', signRoutes);
 app.use('/verify', verifyRoutes);
 app.use('/profile', profileRoutes);
 app.use('/guest', guestRoutes);
+app.use('/surat', letterRoutes);
 app.use('/admin', adminRoutes);
 
 app.get('/documents', (req, res) => {
