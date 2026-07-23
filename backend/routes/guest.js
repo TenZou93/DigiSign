@@ -84,4 +84,19 @@ router.get('/download/:code', (req, res) => {
   res.download(filePath, dlName);
 });
 
+router.get('/prepare-sign/:id', (req, res) => {
+  if (!req.session.user) return res.redirect('/auth/login');
+  const db = getDB();
+  const doc = db.prepare('SELECT * FROM guest_docs WHERE id = ?').get(req.params.id);
+  if (!doc || doc.status !== 'approved') return res.redirect('/documents?error=Dokumen tidak valid');
+  const guestPath = path.join(guestTempDir, doc.filename);
+  if (!fs.existsSync(guestPath)) return res.redirect('/documents?error=File asli tidak ditemukan');
+  const destDir = path.join(__dirname, '..', '..', 'uploads');
+  const ext = path.extname(doc.originalname) || '.pdf';
+  const newFilename = `guest_${doc.id}_${Date.now()}${ext}`;
+  fs.copyFileSync(guestPath, path.join(destDir, newFilename));
+  const redir = req.query._redirect ? '&_redirect=' + encodeURIComponent(req.query._redirect) : '';
+  res.redirect(`/sign?preload=${newFilename}&originalname=${encodeURIComponent(doc.originalname)}&guest_doc_id=${doc.id}${redir}`);
+});
+
 module.exports = router;

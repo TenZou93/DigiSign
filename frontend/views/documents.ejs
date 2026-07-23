@@ -138,7 +138,7 @@
                       <% } else if (d.status === 'approved' && user.role === 'admin') { %>
                         <a href="/admin/guests/<%= d.id %>/sign?_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> TTD</a>
                       <% } else if (d.status === 'approved' && user.role !== 'admin') { %>
-                        <a href="/sign?preload=<%= d.filename %>&originalname=<%= encodeURIComponent(d.originalname) %>&guest_doc_id=<%= d.id %>&_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> Tanda Tangani</a>
+                        <a href="/guest/prepare-sign/<%= d.id %>?_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> Tanda Tangani</a>
                       <% } else if (d.status === 'signed') { %>
                         <a href="/guest/download/<%= d.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-download"></i> Signed</a>
                       <% } else if (d.status === 'rejected') { %>
