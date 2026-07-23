@@ -159,11 +159,11 @@ async function initDB() {
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN tracking_code TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN document_name TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN signed_file TEXT'); } catch (e) { /* kolom sudah ada */ }
-  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_pembuka TEXT"); } catch (e) { /* kolom sudah ada */ }
-  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_data_label TEXT"); } catch (e) { /* kolom sudah ada */ }
-  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_isi TEXT"); } catch (e) { /* kolom sudah ada */ }
-  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_penutup TEXT"); } catch (e) { /* kolom sudah ada */ }
-  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN judul_surat TEXT"); } catch (e) { /* kolom sudah ada */ }
+  // Migrasi kolom letter_templates — coba satu per satu
+  const ltColumns = ['body_pembuka', 'body_data_label', 'body_isi', 'body_penutup', 'judul_surat'];
+  for (const col of ltColumns) {
+    try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN " + col + " TEXT"); } catch (e) {}
+  }
   try { getWrapper().exec(`
     CREATE TABLE IF NOT EXISTS letter_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
