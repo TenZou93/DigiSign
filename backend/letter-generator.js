@@ -1,20 +1,23 @@
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 
 function wrapText(text, font, fontSize, maxWidth) {
-  const words = text.split(' ');
-  const lines = [];
-  let line = '';
-  for (const word of words) {
-    const testLine = line ? line + ' ' + word : word;
-    if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = testLine;
+  const rawLines = text.split('\n');
+  const result = [];
+  for (const raw of rawLines) {
+    const words = raw.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line ? line + ' ' + word : word;
+      if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth) {
+        if (line) result.push(line);
+        line = word;
+      } else {
+        line = testLine;
+      }
     }
+    if (line) result.push(line);
   }
-  if (line) lines.push(line);
-  return lines;
+  return result;
 }
 
 async function generateLetterPDF(template, formData, options = {}) {
@@ -82,21 +85,17 @@ async function generateLetterPDF(template, formData, options = {}) {
   const data = formData;
 
   // --- KOP SURAT ---
-  // Logo area (left)
-  const logoTextLines = [
-    'LOGO',
-    'IIK NU TUBAN'
-  ];
-  y = drawText(logoTextLines.join('\n'), marginLeft, y, { fontSize: 16, bold: true, wrap: false });
-
-  // Right side: institution info
-  const institusiLines = [
+  for (const line of ['LOGO', 'IIK NU TUBAN']) {
+    y = drawText(line, marginLeft, y, { fontSize: 16, bold: true, wrap: false });
+  }
+  for (const line of [
     'KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI',
     'INSTITUT ILMU KESEHATAN NAHDLATUL ULAMA TUBAN',
     'Jl. Cendrawasih No. 31 Tuban - Jawa Timur',
     'Telp. (0356) 321456, Website: www.iiknujatim.ac.id'
-  ];
-  y = drawText(institusiLines.join('\n'), marginLeft, y, { fontSize: 9, maxWidth: contentWidth, align: 'center' });
+  ]) {
+    y = drawText(line, marginLeft, y, { fontSize: 9, maxWidth: contentWidth, align: 'center' });
+  }
   y += 4;
   drawLine(marginLeft, y, pageWidth - marginRight, y, { thickness: 3 });
   y -= 4;
@@ -127,7 +126,7 @@ async function generateLetterPDF(template, formData, options = {}) {
     { label: 'Semester', value: data.semester },
   ];
   for (const f of fields) {
-    const line = `${f.label}\t: ${f.value || '-'}`;
+    const line = `${f.label} : ${f.value || '-'}`;
     y = drawText(line, marginLeft, y, { fontSize: 11, maxWidth: contentWidth, wrap: true });
   }
   spacer(10);
