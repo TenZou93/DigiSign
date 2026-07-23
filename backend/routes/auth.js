@@ -23,7 +23,13 @@ router.post('/register', (req, res) => {
     const hash = crypto.createHash('sha256').update(password).digest('hex');
     const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get()?.c || 0;
     const role = userCount === 0 ? 'admin' : 'user';
-    db.prepare('INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)').run(username, hash, display_name || username, role);
+    const displayName = display_name || username;
+    db.prepare('INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)').run(username, hash, displayName, role);
+    if (role !== 'admin') {
+      const newUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+      db.prepare('INSERT INTO signers (user_id, label, display_name, public_key, private_key_encrypted) VALUES (?, ?, ?, ?, ?)').run(newUser.id, displayName, displayName, publicKey, privateKey);
+    }
     res.redirect('/auth/login');
   } catch (e) {
     if (e.message.includes('UNIQUE')) {

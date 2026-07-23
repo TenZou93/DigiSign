@@ -101,13 +101,19 @@ router.use(requireAuth);
 router.get('/', (req, res) => {
   const db = getDB();
   const keys = db.prepare('SELECT id, label, algorithm, created_at FROM key_pairs WHERE user_id = ?').all(req.session.user.id);
-  const signers = db.prepare('SELECT id, label, display_name, organization FROM signers WHERE user_id = ?').all(req.session.user.id);
+  let signers = db.prepare('SELECT id, label, display_name, organization FROM signers WHERE user_id = ?').all(req.session.user.id);
+  const isAdmin = req.session.user.role === 'admin';
+  if (!isAdmin && signers.length === 0) {
+    signers = db.prepare('SELECT id, label, display_name, organization FROM signers WHERE user_id = ?').all(req.session.user.id);
+  }
+  const mySigner = !isAdmin && signers.length > 0 ? signers[0] : null;
   const error = req.query.error || null;
   res.render('sign', {
-    keys, signers, message: null, error,
+    keys, signers, message: null, error, isAdmin,
+    mySigner,
     preload: req.query.preload || null,
     preloadName: req.query.originalname || null,
-    preloadSignerId: req.query.signer_id || null,
+    preloadSignerId: mySigner ? mySigner.id : (req.query.signer_id || null),
     guestDocId: req.query.guest_doc_id || null,
     redirectAfterSign: req.query._redirect || null
   });
@@ -163,8 +169,15 @@ router.post('/apply-sign', upload.none(), async (req, res) => {
     let key, signerName, signerOrg, signerEmail;
     let signerRecord = null;
 
-    if (signer_id) {
-      signerRecord = db.prepare('SELECT * FROM signers WHERE id = ? AND user_id = ?').get(signer_id, req.session.user.id);
+    let effectiveSignerId = signer_id;
+    if (req.session.user.role !== 'admin') {
+      const mySigner = db.prepare('SELECT id FROM signers WHERE user_id = ?').get(req.session.user.id);
+      if (!mySigner) return res.status(403).json({ error: 'Anda belum memiliki signer. Hubungi admin.' });
+      effectiveSignerId = String(mySigner.id);
+    }
+
+    if (effectiveSignerId) {
+      signerRecord = db.prepare('SELECT * FROM signers WHERE id = ? AND user_id = ?').get(effectiveSignerId, req.session.user.id);
       if (!signerRecord) return res.status(404).json({ error: 'Signer tidak ditemukan' });
       key = { public_key: signerRecord.public_key, private_key_encrypted: signerRecord.private_key_encrypted, label: signerRecord.label };
       signerName = signerRecord.display_name;

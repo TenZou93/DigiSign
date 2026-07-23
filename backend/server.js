@@ -73,7 +73,8 @@ app.get('/documents', (req, res) => {
   let guestDocs = [];
   let guestTotal = 0;
   let guestTotalPages = 1;
-  if (req.session.user.role === 'admin') {
+  const isAdmin = req.session.user.role === 'admin';
+  if (isAdmin) {
     const guestTotalRow = db.prepare('SELECT COUNT(*) as count FROM guest_docs').get();
     guestTotal = guestTotalRow ? guestTotalRow.count : 0;
     guestTotalPages = Math.max(1, Math.ceil(guestTotal / limit));
@@ -84,6 +85,22 @@ app.get('/documents', (req, res) => {
       LEFT JOIN signers sn ON g.signer_id = sn.id
       ORDER BY g.created_at DESC LIMIT ? OFFSET ?
     `).all(limit, guestOffset);
+  } else {
+    const mySigners = db.prepare('SELECT id FROM signers WHERE user_id = ?').all(req.session.user.id);
+    if (mySigners.length > 0) {
+      const ids = mySigners.map(s => s.id).join(',');
+      const guestTotalRow = db.prepare(`SELECT COUNT(*) as count FROM guest_docs WHERE signer_id IN (${ids})`).get();
+      guestTotal = guestTotalRow ? guestTotalRow.count : 0;
+      guestTotalPages = Math.max(1, Math.ceil(guestTotal / limit));
+      const guestOffset = (guestPage - 1) * limit;
+      guestDocs = db.prepare(`
+        SELECT g.*, sn.display_name as signer_name, sn.label as signer_label
+        FROM guest_docs g
+        LEFT JOIN signers sn ON g.signer_id = sn.id
+        WHERE g.signer_id IN (${ids})
+        ORDER BY g.created_at DESC LIMIT ? OFFSET ?
+      `).all(limit, guestOffset);
+    }
   }
 
   res.render('documents', {

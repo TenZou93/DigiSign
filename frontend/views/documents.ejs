@@ -16,9 +16,7 @@
 
 <ul class="nav nav-tabs mb-3" id="docTabs">
   <li class="nav-item"><button class="nav-link active fw-semibold small" data-bs-toggle="tab" data-bs-target="#tabSigned" style="color:#0f172a;border:none;border-bottom:2px solid transparent" onclick="switchTab('signed')"><i class="bi bi-shield-check"></i> Tanda Tangan</button></li>
-  <% if (user.role === 'admin') { %>
   <li class="nav-item"><button class="nav-link fw-semibold small" data-bs-toggle="tab" data-bs-target="#tabGuest" style="color:#64748b;border:none;border-bottom:2px solid transparent" onclick="switchTab('guest')"><i class="bi bi-inbox"></i> Dokumen Guest</button></li>
-  <% } %>
 </ul>
 
 <div class="tab-content">
@@ -90,7 +88,6 @@
     </div>
   </div>
 
-  <% if (user.role === 'admin') { %>
   <div class="tab-pane fade" id="tabGuest">
     <div class="card card-modern">
       <div class="card-header-custom">
@@ -98,7 +95,7 @@
       </div>
       <div class="card-body-custom">
         <% if (guestDocs.length === 0) { %>
-          <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Belum ada dokumen guest.</p></div>
+          <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:48px;color:#cbd5e1"></i><p class="text-muted mt-2">Belum ada dokumen guest untuk Anda.</p></div>
         <% } else { %>
           <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -107,7 +104,6 @@
                   <th class="border-0">Tracking</th>
                   <th class="border-0">Pengirim</th>
                   <th class="border-0">Dokumen</th>
-                  <th class="border-0">Signer</th>
                   <th class="border-0">Status</th>
                   <th class="border-0">Tanggal</th>
                   <th class="border-0">Aksi</th>
@@ -119,7 +115,6 @@
                     <td><span class="font-monospace fw-bold" style="font-size:12px"><%= d.tracking_code %></span></td>
                     <td><%= d.guest_name || 'Anonim' %></td>
                     <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= d.originalname %></td>
-                    <td><span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:500"><%= d.signer_name || '-' %></span></td>
                     <td>
                       <% const statusLabels = {pending:'Menunggu',approved:'Disetujui',rejected:'Ditolak',signed:'Ditandatangani'}; %>
                       <% const statusColors = {pending:'#d97706',approved:'#3b82f6',rejected:'#dc2626',signed:'#16a34a'}; %>
@@ -128,27 +123,16 @@
                     </td>
                     <td style="font-size:12px;color:#64748b"><%= d.created_at %></td>
                     <td style="white-space:nowrap">
-                      <% if (d.status === 'pending') { %>
-                        <form method="POST" action="/admin/guests/<%= d.id %>/approve" class="d-inline">
-                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
-                          <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-check"></i> Setuju</button>
-                        </form>
-                        <form method="POST" action="/admin/guests/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
-                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
-                          <input type="hidden" name="admin_note" id="rejectNote_<%= d.id %>">
-                          <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:11px;padding:4px 10px" onclick="document.getElementById('rejectNote_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
-                        </form>
-                      <% } else if (d.status === 'approved') { %>
+                      <% if (d.status === 'approved' && user.role === 'admin') { %>
                         <a href="/admin/guests/<%= d.id %>/sign?_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> TTD</a>
-                        <form method="POST" action="/admin/guests/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
-                          <input type="hidden" name="_redirect" value="/documents?tab=guest">
-                          <input type="hidden" name="admin_note" id="rejectNote2_<%= d.id %>">
-                          <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:11px;padding:4px 10px" onclick="document.getElementById('rejectNote2_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
-                        </form>
+                      <% } else if (d.status === 'approved' && user.role !== 'admin') { %>
+                        <a href="/sign?preload=<%= d.filename %>&originalname=<%= encodeURIComponent(d.originalname) %>&guest_doc_id=<%= d.id %>&_redirect=/documents?tab=guest" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-pen"></i> Tanda Tangani</a>
                       <% } else if (d.status === 'signed') { %>
                         <a href="/guest/download/<%= d.id %>" class="btn btn-sm text-white" style="background:#10b981;border-radius:8px;font-size:11px;padding:4px 10px;border:none"><i class="bi bi-download"></i> Signed</a>
+                      <% } else if (d.status === 'pending') { %>
+                        <span class="small text-muted">Menunggu admin</span>
                       <% } else if (d.status === 'rejected') { %>
-                        <span class="small text-muted"><%= d.admin_note || '-' %></span>
+                        <span class="small text-muted"><%= d.admin_note || 'Ditolak' %></span>
                       <% } %>
                     </td>
                   </tr>
@@ -178,7 +162,6 @@
       </div>
     </div>
   </div>
-  <% } %>
 </div>
 
 <style>

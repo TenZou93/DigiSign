@@ -123,7 +123,7 @@
         </div>
         <div class="col-md-6">
           <% if (signers.length > 0) { %>
-            <div class="mb-3">
+            <div class="mb-3" <% if (typeof isAdmin !== 'undefined' && !isAdmin) { %>style="display:none"<% } %>>
               <label class="form-label fw-semibold" style="font-size:13px">Tandatangani Sebagai</label>
               <select id="signerSelect" class="form-select" onchange="document.getElementById('keySelect').value=''; updateBtnState();" style="border-radius:10px;border:1.5px solid #e2e8f0">
                 <option value="">-- Pilih Signer --</option>
@@ -133,6 +133,14 @@
               </select>
               <div class="form-text">Pilih identitas penandatangan</div>
             </div>
+            <% if (typeof isAdmin !== 'undefined' && !isAdmin && typeof mySigner !== 'undefined' && mySigner) { %>
+              <input type="hidden" id="signerIdHidden" value="<%= mySigner.id %>">
+              <div class="mb-3 p-3" style="background:#f8fafc;border-radius:10px;border:1.5px solid #e2e8f0">
+                <label class="form-label fw-semibold mb-1" style="font-size:12px">Menandatangani sebagai</label>
+                <div class="fw-bold" style="font-size:14px;color:#0f172a"><i class="bi bi-person-badge"></i> <%= mySigner.display_name %></div>
+                <div class="text-muted" style="font-size:11px"><%= mySigner.label %></div>
+              </div>
+            <% } %>
           <% } %>
           <div class="mb-3">
             <label class="form-label fw-semibold" style="font-size:13px">Kunci Privat</label>
@@ -208,12 +216,19 @@
 
   const fileInput = document.getElementById('docFile');
   const keySelect = document.getElementById('keySelect');
-  const signerSelect = document.getElementById('signerSelect');
+  let signerSelect = document.getElementById('signerSelect');
   const btnUpload = document.getElementById('btnUpload');
+  const hiddenSigner = document.getElementById('signerIdHidden');
+
+  function getSignerId() {
+    if (hiddenSigner) return hiddenSigner.value;
+    if (signerSelect) return signerSelect.value;
+    return '';
+  }
 
   function updateBtnState() {
     const hasFile = fileInput.files.length > 0;
-    const hasIdentity = (signerSelect && signerSelect.value) || (keySelect && keySelect.value);
+    const hasIdentity = getSignerId() || (keySelect && keySelect.value);
     btnUpload.disabled = !(hasFile && hasIdentity);
   }
   window.updateBtnState = updateBtnState;
@@ -228,8 +243,14 @@
   if (keySelect) keySelect.addEventListener('change', updateBtnState);
   if (signerSelect) signerSelect.addEventListener('change', updateBtnState);
 
+  // Pre-set signerSelect for non-admin
+  if (!signerSelect && hiddenSigner) {
+    signerSelect = { value: hiddenSigner.value };
+    updateBtnState();
+  }
+
   window.uploadAndPreview = async function() {
-    const hasIdentity = (signerSelect && signerSelect.value) || (keySelect && keySelect.value);
+    const hasIdentity = getSignerId() || (keySelect && keySelect.value);
     if (!fileInput.files.length || !hasIdentity) return;
     const file = fileInput.files[0];
     btnUpload.disabled = true;
@@ -517,11 +538,11 @@
         try {
           const resp = await fetch('/sign/apply-sign', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
+          body: JSON.stringify({
               filename: uploadedFilename, originalname: uploadedOriginalname,
               display_name: document.getElementById('docName').value || '',
               key_id: keySelect ? keySelect.value : '',
-              signer_id: (signerSelect && signerSelect.value) ? signerSelect.value : '',
+              signer_id: getSignerId(),
               page_num: 0, pos_x: 0, pos_y: 0, canvas_w: 100, canvas_h: 100, pdf_w: 100, pdf_h: 100, qr_size: 80,
               guest_doc_id: '<%= typeof guestDocId !== 'undefined' ? guestDocId : '' %>'
             })
