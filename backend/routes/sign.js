@@ -179,6 +179,12 @@ router.post('/apply-sign', upload.none(), async (req, res) => {
     if (effectiveSignerId) {
       signerRecord = db.prepare('SELECT * FROM signers WHERE id = ? AND user_id = ?').get(effectiveSignerId, req.session.user.id);
       if (!signerRecord) return res.status(404).json({ error: 'Signer tidak ditemukan' });
+      if (!signerRecord.private_key_encrypted) {
+        const kp = crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+        db.prepare('UPDATE signers SET public_key = ?, private_key_encrypted = ? WHERE id = ?').run(kp.publicKey, kp.privateKey, signerRecord.id);
+        signerRecord.public_key = kp.publicKey;
+        signerRecord.private_key_encrypted = kp.privateKey;
+      }
       key = { public_key: signerRecord.public_key, private_key_encrypted: signerRecord.private_key_encrypted, label: signerRecord.label };
       signerName = signerRecord.display_name;
       signerOrg = signerRecord.organization;

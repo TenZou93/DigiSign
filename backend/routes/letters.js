@@ -244,7 +244,7 @@ router.get('/admin/templates/new', (req, res) => {
 
 router.post('/admin/templates/new', (req, res) => {
   if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
-  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom } = req.body;
+  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup } = req.body;
   if (!name || !code) return res.redirect('/surat/admin/templates/new?error=Nama dan kode wajib diisi');
   const db = getDB();
   let fields = [];
@@ -264,8 +264,8 @@ router.post('/admin/templates/new', (req, res) => {
   ]);
   try {
     db.prepare(
-      'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null);
+      'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, judul_surat || null, body_pembuka || null, body_data_label || null, body_isi || null, body_penutup || null);
     res.redirect('/surat/admin/templates?message=Tersimpan');
   } catch (e) {
     res.redirect('/surat/admin/templates/new?error=' + encodeURIComponent(e.message));
@@ -282,7 +282,7 @@ router.get('/admin/templates/:id/edit', (req, res) => {
 
 router.post('/admin/templates/:id/edit', (req, res) => {
   if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
-  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom } = req.body;
+  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup } = req.body;
   const db = getDB();
   let fields = [];
   try { fields = JSON.parse(form_fields || '[]'); } catch (e) { fields = []; }
@@ -300,8 +300,8 @@ router.post('/admin/templates/:id/edit', (req, res) => {
   ]);
   try {
     db.prepare(
-      'UPDATE letter_templates SET name=?, code=?, description=?, form_fields=?, styles=?, default_margins=?, kop_kiri=?, kop_kanan=?, pejabat_nama=?, pejabat_jabatan=?, pejabat_nip=? WHERE id=?'
-    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, req.params.id);
+      'UPDATE letter_templates SET name=?, code=?, description=?, form_fields=?, styles=?, default_margins=?, kop_kiri=?, kop_kanan=?, pejabat_nama=?, pejabat_jabatan=?, pejabat_nip=?, judul_surat=?, body_pembuka=?, body_data_label=?, body_isi=?, body_penutup=? WHERE id=?'
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, judul_surat || null, body_pembuka || null, body_data_label || null, body_isi || null, body_penutup || null, req.params.id);
     res.redirect('/surat/admin/templates?message=Tersimpan');
   } catch (e) {
     res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=' + encodeURIComponent(e.message));

@@ -26,6 +26,35 @@
         <p class="text-muted small mb-2">Array of objects: <code>{ name, label, type: "text"|"textarea", required: true/false }</code></p>
         <textarea name="form_fields" class="form-control font-monospace" rows="6" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px"><%= template ? template.form_fields : '[{"name":"nama","label":"Nama Lengkap","type":"text","required":true}]' %></textarea>
         <hr>
+        <h6 class="fw-bold mb-2">Judul & Isi Surat</h6>
+        <p class="text-muted small mb-2">Gunakan <code>{{field_name}}</code> untuk data dari form. <code>{{pejabat_nama}}</code>, <code>{{pejabat_jabatan}}</code>, <code>{{institusi}}</code> diisi otomatis.</p>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Judul Surat</label>
+            <input type="text" name="judul_surat" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? (template.judul_surat || '') : 'SURAT KETERANGAN' %>" placeholder="SURAT KETERANGAN">
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Pembuka</label>
+            <textarea name="body_pembuka" class="form-control" rows="6" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px" placeholder="Yang bertanda tangan di bawah ini:&#10;&#10;{{pejabat_nama}}&#10;{{pejabat_jabatan}}&#10;&#10;Menerangkan bahwa:"><%= template ? (template.body_pembuka || '') : '' %></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Data (label + field)</label>
+            <textarea name="body_data_label" class="form-control" rows="6" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px" placeholder="Nama : {{nama}}&#10;NIM : {{nim}}&#10;..."><%= template ? (template.body_data_label || '') : '' %></textarea>
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Isi (setelah data)</label>
+            <textarea name="body_isi" class="form-control" rows="4" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px" placeholder="Adalah benar mahasiswa aktif..."><%= template ? (template.body_isi || '') : '' %></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Penutup</label>
+            <textarea name="body_penutup" class="form-control" rows="4" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px" placeholder="Demikian surat keterangan ini..."><%= template ? (template.body_penutup || '') : '' %></textarea>
+          </div>
+        </div>
+        <hr>
         <h6 class="fw-bold mb-2">Kop Surat</h6>
         <div class="row g-2 mb-3">
           <div class="col-md-6">

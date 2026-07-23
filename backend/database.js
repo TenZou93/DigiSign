@@ -159,6 +159,11 @@ async function initDB() {
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN tracking_code TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN document_name TEXT'); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().run('ALTER TABLE guest_docs ADD COLUMN signed_file TEXT'); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_pembuka TEXT"); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_data_label TEXT"); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_isi TEXT"); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN body_penutup TEXT"); } catch (e) { /* kolom sudah ada */ }
+  try { getWrapper().run("ALTER TABLE letter_templates ADD COLUMN judul_surat TEXT"); } catch (e) { /* kolom sudah ada */ }
   try { getWrapper().exec(`
     CREATE TABLE IF NOT EXISTS letter_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -224,11 +229,16 @@ async function initDB() {
         kop_kanan: 'KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI\nINSTITUT ILMU KESEHATAN NAHDLATUL ULAMA TUBAN\nJl. Cendrawasih No. 31 Tuban - Jawa Timur\nTelp. (0356) 321456, Website: www.iiknujatim.ac.id',
         pejabat_nama: 'Nama Pejabat',
         pejabat_jabatan: 'Wakil Rektor III',
-        pejabat_nip: 'NIP. ..........................'
+        pejabat_nip: 'NIP. ..........................',
+        judul_surat: 'SURAT KETERANGAN',
+        body_pembuka: 'Yang bertanda tangan di bawah ini:\n\n{{pejabat_nama}}\n{{pejabat_jabatan}}\n\nMenerangkan bahwa:\n',
+        body_data_label: 'Nama : {{nama}}\nNIM : {{nim}}\nProgram Studi : {{prodi}}\nSemester : {{semester}}',
+        body_isi: 'Adalah benar mahasiswa aktif pada Program Studi {{prodi}} {{institusi}}.\n\nSurat ini dibuat untuk keperluan {{keperluan}}.',
+        body_penutup: 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk digunakan sebagaimana mestinya.'
       };
       getWrapper().run(
-        'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [defaultTemplate.name, defaultTemplate.code, defaultTemplate.description, defaultTemplate.form_fields, defaultTemplate.styles, defaultTemplate.default_margins, defaultTemplate.kop_kiri, defaultTemplate.kop_kanan, defaultTemplate.pejabat_nama, defaultTemplate.pejabat_jabatan, defaultTemplate.pejabat_nip]
+        'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [defaultTemplate.name, defaultTemplate.code, defaultTemplate.description, defaultTemplate.form_fields, defaultTemplate.styles, defaultTemplate.default_margins, defaultTemplate.kop_kiri, defaultTemplate.kop_kanan, defaultTemplate.pejabat_nama, defaultTemplate.pejabat_jabatan, defaultTemplate.pejabat_nip, defaultTemplate.judul_surat, defaultTemplate.body_pembuka, defaultTemplate.body_data_label, defaultTemplate.body_isi, defaultTemplate.body_penutup]
       );
     }
   } catch (e) { console.error('Seed template error:', e.message); }
