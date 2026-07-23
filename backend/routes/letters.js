@@ -344,8 +344,8 @@ router.get('/admin/backup/export', (req, res) => {
   const backup = {
     version: 1,
     exported_at: new Date().toISOString(),
-    users: db.prepare('SELECT id, username, display_name, role, email, phone, organization, created_at FROM users').all(),
-    signers: db.prepare('SELECT id, user_id, label, display_name, organization, email, phone, algorithm, created_at FROM signers').all(),
+    users: db.prepare('SELECT id, username, password, display_name, role, email, phone, organization, created_at FROM users').all(),
+    signers: db.prepare('SELECT id, user_id, label, display_name, organization, email, phone, public_key, private_key_encrypted, algorithm, created_at FROM signers').all(),
     letter_templates: db.prepare('SELECT * FROM letter_templates').all(),
     app_settings: db.prepare('SELECT setting_key, setting_value FROM app_settings').all()
   };
@@ -366,23 +366,23 @@ router.post('/admin/backup/import', backupUpload.single('backup_file'), (req, re
     if (data.users && Array.isArray(data.users)) {
       for (const u of data.users) {
         try {
-          db.prepare('INSERT OR IGNORE INTO users (id, username, display_name, role, email, phone, organization, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(u.id, u.username, u.display_name, u.role || 'user', u.email || null, u.phone || null, u.organization || null, u.created_at || null);
+          db.prepare('INSERT OR REPLACE INTO users (id, username, password, display_name, role, email, phone, organization, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(u.id, u.username, u.password, u.display_name, u.role || 'user', u.email || null, u.phone || null, u.organization || null, u.created_at || null);
         } catch (e) {}
       }
     }
     if (data.signers && Array.isArray(data.signers)) {
       for (const s of data.signers) {
         try {
-          db.prepare('INSERT OR IGNORE INTO signers (id, user_id, label, display_name, organization, email, phone, algorithm, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(s.id, s.user_id, s.label, s.display_name, s.organization || null, s.email || null, s.phone || null, s.algorithm || 'RSA-2048', s.created_at || null);
+          db.prepare('INSERT OR REPLACE INTO signers (id, user_id, label, display_name, organization, email, phone, public_key, private_key_encrypted, algorithm, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(s.id, s.user_id, s.label, s.display_name, s.organization || null, s.email || null, s.phone || null, s.public_key || null, s.private_key_encrypted || null, s.algorithm || 'RSA-2048', s.created_at || null);
         } catch (e) {}
       }
     }
     if (data.letter_templates && Array.isArray(data.letter_templates)) {
       for (const t of data.letter_templates) {
         try {
-          db.prepare('INSERT OR IGNORE INTO letter_templates (id, name, code, description, form_fields, styles, default_margins, logo_path, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          db.prepare('INSERT OR REPLACE INTO letter_templates (id, name, code, description, form_fields, styles, default_margins, logo_path, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
             .run(t.id, t.name, t.code, t.description || '', t.form_fields || '[]', t.styles || null, t.default_margins || null, t.logo_path || null, t.kop_kiri || null, t.kop_kanan || null, t.pejabat_nama || null, t.pejabat_jabatan || null, t.pejabat_nip || null, t.created_at || null);
         } catch (e) {}
       }
