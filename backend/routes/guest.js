@@ -46,28 +46,57 @@ router.post('/upload', upload.single('document'), (req, res) => {
 router.get('/api/track/:code', (req, res) => {
   try {
     const db = getDB();
-    const doc = db.prepare(`
-      SELECT g.*, sn.display_name as signer_name
-      FROM guest_docs g
-      LEFT JOIN signers sn ON g.signer_id = sn.id
-      WHERE g.tracking_code = ?
-    `).get(req.params.code);
-    if (!doc) return res.json({ error: 'Nomor tracking tidak ditemukan' });
-    let download_url = null;
-    if (doc.status === 'signed' && doc.signed_file) {
-      download_url = '/guest/download/' + doc.tracking_code;
+    const code = req.params.code.toUpperCase();
+    if (code.startsWith('LT')) {
+      const letter = db.prepare(`
+        SELECT l.*, t.name as template_name, sn.display_name as signer_name
+        FROM generated_letters l
+        JOIN letter_templates t ON l.template_id = t.id
+        LEFT JOIN signers sn ON l.signer_id = sn.id
+        WHERE l.tracking_code = ?
+      `).get(code);
+      if (!letter) return res.json({ error: 'Nomor tracking tidak ditemukan' });
+      let fieldData = {};
+      try { fieldData = JSON.parse(letter.field_data || '{}'); } catch(e) {}
+      let download_url = null;
+      if (letter.status === 'signed' && letter.signed_file) {
+        download_url = '/surat/download/' + letter.id;
+      }
+      res.json({
+        tracking_code: letter.tracking_code,
+        guest_name: letter.guest_name || fieldData.nama || '-',
+        originalname: 'Surat: ' + (letter.template_name || ''),
+        document_name: 'Surat ' + (letter.template_name || ''),
+        signer_name: letter.signer_name || '-',
+        status: letter.status,
+        created_at: letter.created_at,
+        admin_note: letter.admin_note,
+        download_url
+      });
+    } else {
+      const doc = db.prepare(`
+        SELECT g.*, sn.display_name as signer_name
+        FROM guest_docs g
+        LEFT JOIN signers sn ON g.signer_id = sn.id
+        WHERE g.tracking_code = ?
+      `).get(code);
+      if (!doc) return res.json({ error: 'Nomor tracking tidak ditemukan' });
+      let download_url = null;
+      if (doc.status === 'signed' && doc.signed_file) {
+        download_url = '/guest/download/' + doc.tracking_code;
+      }
+      res.json({
+        tracking_code: doc.tracking_code,
+        guest_name: doc.guest_name,
+        originalname: doc.originalname,
+        document_name: doc.document_name || doc.originalname,
+        signer_name: doc.signer_name,
+        status: doc.status,
+        created_at: doc.created_at,
+        admin_note: doc.admin_note,
+        download_url
+      });
     }
-    res.json({
-      tracking_code: doc.tracking_code,
-      guest_name: doc.guest_name,
-      originalname: doc.originalname,
-      document_name: doc.document_name || doc.originalname,
-      signer_name: doc.signer_name,
-      status: doc.status,
-      created_at: doc.created_at,
-      admin_note: doc.admin_note,
-      download_url
-    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
