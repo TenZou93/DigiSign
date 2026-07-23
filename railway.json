@@ -1,7 +1,6 @@
 {
   "build": {
-    "builder": "NIXPACKS",
-    "watchPatterns": ["backend/**"]
+    "builder": "NIXPACKS"
   },
   "deploy": {
     "healthcheckPath": "/"

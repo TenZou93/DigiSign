@@ -5,5 +5,8 @@
   "scripts": {
     "postinstall": "cd backend && npm install",
     "start": "cd backend && node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }
