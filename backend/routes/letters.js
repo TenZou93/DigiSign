@@ -133,7 +133,8 @@ router.get('/admin/list', (req, res) => {
     LEFT JOIN signers sn ON l.signer_id = sn.id
     ORDER BY l.created_at DESC LIMIT ? OFFSET ?
   `).all(limit, offset);
-  res.render('admin_letters', { letters, page, total, totalPages, user: req.session.user, message: req.query.message, error: req.query.error });
+  const allSigners = db.prepare('SELECT id, display_name, label FROM signers ORDER BY display_name').all();
+  res.render('admin_letters', { letters, page, total, totalPages, allSigners, user: req.session.user, message: req.query.message, error: req.query.error });
 });
 
 // Signer/Admin: view letters assigned to me
@@ -163,13 +164,14 @@ router.get('/my', (req, res) => {
   res.render('my_letters', { letters, page, total, totalPages, isAdmin, user: req.session.user, message: req.query.message, error: req.query.error });
 });
 
-// Admin: approve letter
+// Admin: approve letter (dengan signer_id dari form)
 router.post('/admin/:id/approve', (req, res) => {
   if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
   const db = getDB();
   const doc = db.prepare('SELECT * FROM generated_letters WHERE id = ?').get(req.params.id);
   if (!doc) return res.redirect('/surat/admin/list?error=Tidak ditemukan');
-  db.prepare("UPDATE generated_letters SET status = 'approved' WHERE id = ?").run(req.params.id);
+  const signerId = req.body.signer_id || doc.signer_id || null;
+  db.prepare("UPDATE generated_letters SET status = 'approved', signer_id = ? WHERE id = ?").run(signerId, req.params.id);
   const dest = req.body._redirect || '/surat/admin/list';
   res.redirect(dest + '?message=Disetujui');
 });
@@ -198,24 +200,24 @@ router.get('/sign/:id', (req, res) => {
   if (!req.session.user) return res.redirect('/auth/login');
   const db = getDB();
   const doc = db.prepare('SELECT * FROM generated_letters WHERE id = ?').get(req.params.id);
-  if (!doc || doc.status !== 'approved') return res.redirect('/surat/my?error=Tidak valid');
+  const redirErr = req.query._redirect || '/surat/my';
+  if (!doc || doc.status !== 'approved') return res.redirect(redirErr + '?error=Tidak valid');
 
   const signers = db.prepare('SELECT id FROM signers WHERE user_id = ?').all(req.session.user.id);
   const isAdmin = req.session.user.role === 'admin';
   if (!isAdmin && signers.length > 0 && !signers.some(s => s.id === doc.signer_id)) {
-    return res.redirect('/surat/my?error=Bukan untuk Anda');
+    return res.redirect(redirErr + '?error=Bukan untuk Anda');
   }
 
   const origPath = path.join(lettersDir, doc.filename);
-  if (!fs.existsSync(origPath)) return res.redirect('/surat/my?error=File tidak ditemukan');
+  if (!fs.existsSync(origPath)) return res.redirect(redirErr + '?error=File tidak ditemukan');
 
   const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
   const ext = path.extname(doc.filename) || '.pdf';
   const newFilename = `letter_sign_${doc.id}_${Date.now()}${ext}`;
-  fs.copyFileSync(origPath, path.join(uploadsDir, newFilename));
-
-  // Update filename to the copy in uploads for signing
-  db.prepare('UPDATE generated_letters SET filename = ? WHERE id = ?').run(newFilename, doc.id);
+  const destPath = path.join(uploadsDir, newFilename);
+  fs.copyFileSync(origPath, destPath);
+  if (!fs.existsSync(destPath)) return res.redirect(redirErr + '?error=Gagal menyalin file');
 
   const redir = req.query._redirect ? '&_redirect=' + encodeURIComponent(req.query._redirect) : '';
   res.redirect(`/sign?preload=${newFilename}&originalname=${encodeURIComponent('surat_' + doc.tracking_code + '.pdf')}&guest_doc_id=letter_${doc.id}${redir}`);

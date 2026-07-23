@@ -44,16 +44,18 @@
                     <% if (d.status === 'pending') { %>
                       <form method="POST" action="/surat/admin/<%= d.id %>/approve" class="d-inline">
                         <input type="hidden" name="_redirect" value="/surat/admin/list">
-                        <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border-radius:8px;font-size:10px;padding:3px 8px;border:none"><i class="bi bi-check"></i> Setuju</button>
+                        <select name="signer_id" class="form-select form-select-sm d-inline-block" style="width:auto;max-width:120px;font-size:10px;border-radius:6px;display:inline!important" onchange="if(this.value){this.form.querySelector('.btn-setuju').disabled=false}">
+                          <option value="">Signer...</option>
+                          <% (typeof allSigners !== 'undefined' ? allSigners : []).forEach(s => { %>
+                            <option value="<%= s.id %>"><%= s.display_name %></option>
+                          <% }) %>
+                        </select>
+                        <button class="btn btn-sm btn-setuju" style="background:#3b82f6;color:#fff;border-radius:8px;font-size:10px;padding:3px 8px;border:none" disabled><i class="bi bi-check"></i> Setuju</button>
                       </form>
                       <form method="POST" action="/surat/admin/<%= d.id %>/reject" class="d-inline" onsubmit="return prompt('Alasan penolakan:') !== null">
                         <input type="hidden" name="_redirect" value="/surat/admin/list">
                         <input type="hidden" name="admin_note" id="rnote_<%= d.id %>">
                         <button class="btn btn-sm" style="border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;font-size:10px;padding:3px 8px" onclick="document.getElementById('rnote_<%= d.id %>').value=prompt('Alasan penolakan:')"><i class="bi bi-x"></i> Tolak</button>
-                      </form>
-                      <form method="POST" action="/surat/admin/<%= d.id %>/assign-signer" class="d-inline">
-                        <input type="hidden" name="signer_id" id="signer_<%= d.id %>">
-                        <button class="btn btn-sm" style="border:1.5px solid #cbd5e1;border-radius:8px;font-size:10px;padding:3px 8px" onclick="const v=prompt('ID Signer:'); if(v){document.getElementById('signer_<%= d.id %>').value=v;return true;}return false;"><i class="bi bi-person"></i> Signer</button>
                       </form>
                     <% } else if (d.status === 'approved') { %>
                       <a href="/surat/sign/<%= d.id %>?_redirect=/surat/admin/list" class="btn btn-sm text-white" style="background:#16a34a;border-radius:8px;font-size:10px;padding:3px 8px;border:none"><i class="bi bi-pen"></i> TTD</a>
