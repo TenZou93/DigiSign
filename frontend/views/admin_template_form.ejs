@@ -1,0 +1,109 @@
+<%- include('partials/header', { pageTitle: 'Edit Template', activePage: 'admin' }) %>
+<div class="container-fluid py-4 px-4" style="max-width:900px">
+  <a href="/surat/admin/templates" class="btn btn-sm btn-outline-secondary mb-3" style="border-radius:8px"><i class="bi bi-arrow-left"></i> Kembali</a>
+  <div class="card" style="border:1.5px solid #e2e8f0;border-radius:14px">
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-3"><%= template ? 'Edit: ' + template.name : 'Template Baru' %></h5>
+      <% if (error) { %><div class="alert alert-danger small"><%= error %></div><% } %>
+      <% if (message) { %><div class="alert alert-success small"><%= message %></div><% } %>
+      <form method="POST" action="/surat/admin/templates/<%= template ? template.id + '/edit' : 'new' %>">
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Nama Template</label>
+            <input type="text" name="name" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? template.name : '' %>" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Kode</label>
+            <input type="text" name="code" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px;font-family:monospace" value="<%= template ? template.code : '' %>" required <%= template ? 'readonly' : '' %>>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Deskripsi</label>
+            <input type="text" name="description" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? template.description : '' %>">
+          </div>
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-2">Field Form (JSON)</h6>
+        <p class="text-muted small mb-2">Array of objects: <code>{ name, label, type: "text"|"textarea", required: true/false }</code></p>
+        <textarea name="form_fields" class="form-control font-monospace" rows="6" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px"><%= template ? template.form_fields : '[{"name":"nama","label":"Nama Lengkap","type":"text","required":true}]' %></textarea>
+        <hr>
+        <h6 class="fw-bold mb-2">Kop Surat</h6>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Kop Kiri (nama institusi)</label>
+            <input type="text" name="kop_kiri" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? (template.kop_kiri || '') : '' %>" placeholder="Institut Ilmu Kesehatan NU Tuban">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Kop Kanan (baris dipisah \n)</label>
+            <textarea name="kop_kanan" class="form-control" rows="3" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px"><%= template ? (template.kop_kanan || '') : '' %></textarea>
+          </div>
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-2">Penandatangan</h6>
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small">Nama Pejabat</label>
+            <input type="text" name="pejabat_nama" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? (template.pejabat_nama || '') : '' %>">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small">Jabatan</label>
+            <input type="text" name="pejabat_jabatan" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? (template.pejabat_jabatan || '') : '' %>">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small">NIP</label>
+            <input type="text" name="pejabat_nip" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template ? (template.pejabat_nip || '') : '' %>">
+          </div>
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-2">Layout</h6>
+        <div class="row g-2 mb-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Font Body</label>
+            <input type="number" name="body_font_size" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.styles ? (JSON.parse(template.styles).bodyFontSize || 11) : 11 %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Font Kop</label>
+            <input type="number" name="kop_font_size" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.styles ? (JSON.parse(template.styles).kopFontSize || 9) : 9 %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Font Judul</label>
+            <input type="number" name="title_font_size" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.styles ? (JSON.parse(template.styles).titleFontSize || 14) : 14 %>">
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Margin Kiri</label>
+            <input type="number" name="margin_left" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.default_margins ? (JSON.parse(template.default_margins)[0] || 60) : 60 %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Margin Atas</label>
+            <input type="number" name="margin_top" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.default_margins ? (JSON.parse(template.default_margins)[1] || 40) : 40 %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Margin Kanan</label>
+            <input type="number" name="margin_right" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.default_margins ? (JSON.parse(template.default_margins)[2] || 60) : 60 %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Margin Bawah</label>
+            <input type="number" name="margin_bottom" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" value="<%= template && template.default_margins ? (JSON.parse(template.default_margins)[3] || 40) : 40 %>">
+          </div>
+        </div>
+        <hr>
+        <button type="submit" class="btn btn-primary text-white fw-semibold" style="background:#3b82f6;border:none;border-radius:10px;padding:8px 20px"><i class="bi bi-save"></i> Simpan</button>
+      </form>
+      <% if (template) { %>
+        <hr>
+        <h6 class="fw-bold mb-2">Logo</h6>
+        <form method="POST" action="/surat/admin/templates/<%= template.id %>/logo" enctype="multipart/form-data">
+          <div class="mb-2">
+            <% if (template.logo_path) { %>
+              <div class="mb-2"><span class="badge" style="background:#f0fdf4;color:#16a34a">Logo terpasang</span></div>
+            <% } %>
+            <input type="file" name="logo" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" accept="image/png,image/jpeg,image/jpg">
+          </div>
+          <button class="btn btn-sm" style="border:1.5px solid #cbd5e1;border-radius:8px;font-size:12px"><i class="bi bi-upload"></i> Upload Logo</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

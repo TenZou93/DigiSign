@@ -168,6 +168,12 @@ async function initDB() {
       form_fields TEXT NOT NULL,
       styles TEXT,
       default_margins TEXT,
+      logo_path TEXT,
+      kop_kiri TEXT,
+      kop_kanan TEXT,
+      pejabat_nama TEXT,
+      pejabat_jabatan TEXT,
+      pejabat_nip TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
   `); } catch (e) {}
@@ -208,17 +214,21 @@ async function initDB() {
           { name: 'keperluan', label: 'Keperluan', type: 'textarea', required: true }
         ]),
         styles: JSON.stringify({
-          header: { fontSize: 14, bold: true, alignment: 'center' },
-          subheader: { fontSize: 10, alignment: 'center' },
-          body: { fontSize: 11, lineHeight: 1.5 },
-          label: { fontSize: 11, bold: true },
-          signature: { fontSize: 11, alignment: 'center', margin: [0, 30, 0, 0] }
+          bodyFontSize: 11,
+          kopFontSize: 9,
+          titleFontSize: 14,
+          signatureFontSize: 11
         }),
-        default_margins: JSON.stringify([60, 40, 60, 40])
+        default_margins: JSON.stringify([60, 40, 60, 40]),
+        kop_kiri: 'Institut Ilmu Kesehatan Nahdlatul Ulama Tuban',
+        kop_kanan: 'KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI\nINSTITUT ILMU KESEHATAN NAHDLATUL ULAMA TUBAN\nJl. Cendrawasih No. 31 Tuban - Jawa Timur\nTelp. (0356) 321456, Website: www.iiknujatim.ac.id',
+        pejabat_nama: 'Nama Pejabat',
+        pejabat_jabatan: 'Wakil Rektor III',
+        pejabat_nip: 'NIP. ..........................'
       };
       getWrapper().run(
-        'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins) VALUES (?, ?, ?, ?, ?, ?)',
-        [defaultTemplate.name, defaultTemplate.code, defaultTemplate.description, defaultTemplate.form_fields, defaultTemplate.styles, defaultTemplate.default_margins]
+        'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [defaultTemplate.name, defaultTemplate.code, defaultTemplate.description, defaultTemplate.form_fields, defaultTemplate.styles, defaultTemplate.default_margins, defaultTemplate.kop_kiri, defaultTemplate.kop_kanan, defaultTemplate.pejabat_nama, defaultTemplate.pejabat_jabatan, defaultTemplate.pejabat_nip]
       );
     }
   } catch (e) { console.error('Seed template error:', e.message); }

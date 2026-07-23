@@ -1,0 +1,50 @@
+<%- include('partials/header', { pageTitle: 'Backup', activePage: 'admin' }) %>
+<div class="container-fluid py-4 px-4" style="max-width:700px">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-cloud-arrow-down" style="font-size:24px;color:#3b82f6"></i>
+    <h5 class="mb-0 fw-bold">Backup & Restore Database</h5>
+  </div>
+  <% if (error) { %><div class="alert alert-danger small"><%= error %></div><% } %>
+  <% if (message) { %><div class="alert alert-success small"><%= message %></div><% } %>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card" style="border:1.5px solid #e2e8f0;border-radius:12px;height:100%">
+        <div class="card-body p-4 text-center">
+          <div style="width:48px;height:48px;background:#eff6ff;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+            <i class="bi bi-download" style="font-size:22px;color:#3b82f6"></i>
+          </div>
+          <h6 class="fw-bold">Export Database</h6>
+          <p class="text-muted small mb-3">Download data users, signers, template, dan pengaturan sebagai file JSON.</p>
+          <a href="/surat/admin/backup/export" class="btn text-white w-100" style="background:#3b82f6;border:none;border-radius:10px"><i class="bi bi-cloud-arrow-down"></i> Download Backup</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card" style="border:1.5px solid #e2e8f0;border-radius:12px;height:100%">
+        <div class="card-body p-4 text-center">
+          <div style="width:48px;height:48px;background:#fef3c7;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+            <i class="bi bi-upload" style="font-size:22px;color:#d97706"></i>
+          </div>
+          <h6 class="fw-bold">Import Database</h6>
+          <p class="text-muted small mb-3">Pulihkan data dari file backup JSON. Data yang ada tidak akan ditimpa.</p>
+          <form method="POST" action="/surat/admin/backup/import" enctype="multipart/form-data">
+            <input type="file" name="backup_file" class="form-control mb-2" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px" accept=".json" required>
+            <button class="btn w-100" style="border:1.5px solid #d97706;color:#d97706;border-radius:10px;background:#fff"><i class="bi bi-cloud-arrow-up"></i> Restore</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card mt-3" style="border:1.5px solid #e2e8f0;border-radius:12px">
+    <div class="card-body p-3">
+      <h6 class="fw-bold small mb-2"><i class="bi bi-info-circle"></i> Cara penggunaan:</h6>
+      <ol class="small text-muted mb-0" style="line-height:1.8">
+        <li>Sebelum push ke Railway, klik <strong>Download Backup</strong> untuk menyimpan data.</li>
+        <li>Setelah deploy selesai, login sebagai admin, buka halaman Backup, klik <strong>Restore</strong>.</li>
+        <li>Data users, signers, template, dan pengaturan akan dipulihkan.</li>
+        <li>Data yang sudah ada tidak akan ditimpa (INSERT OR IGNORE).</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

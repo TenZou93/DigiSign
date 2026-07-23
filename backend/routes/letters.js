@@ -2,9 +2,14 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const multer = require('multer');
 const router = express.Router();
 const { getDB } = require('../database');
 const { generateLetterPDF } = require('../letter-generator');
+
+const logoUpload = multer({ dest: path.join(__dirname, '..', '..', 'uploads', 'logos') });
+const logoDir = path.join(__dirname, '..', '..', 'uploads', 'logos');
+if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
 
 const lettersDir = path.join(__dirname, '..', '..', 'uploads', 'letters');
 if (!fs.existsSync(lettersDir)) fs.mkdirSync(lettersDir, { recursive: true });
@@ -221,6 +226,180 @@ router.get('/sign/:id', (req, res) => {
 
   const redir = req.query._redirect ? '&_redirect=' + encodeURIComponent(req.query._redirect) : '';
   res.redirect(`/sign?preload=${newFilename}&originalname=${encodeURIComponent('surat_' + doc.tracking_code + '.pdf')}&guest_doc_id=letter_${doc.id}${redir}`);
+});
+
+// --- Admin: Template Management ---
+
+router.get('/admin/templates', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const db = getDB();
+  const templates = db.prepare('SELECT * FROM letter_templates ORDER BY name').all();
+  res.render('admin_templates', { templates, user: req.session.user, message: req.query.message, error: req.query.error });
+});
+
+router.get('/admin/templates/new', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  res.render('admin_template_form', { template: null, user: req.session.user, message: null, error: req.query.error });
+});
+
+router.post('/admin/templates/new', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom } = req.body;
+  if (!name || !code) return res.redirect('/surat/admin/templates/new?error=Nama dan kode wajib diisi');
+  const db = getDB();
+  let fields = [];
+  try { fields = JSON.parse(form_fields || '[]'); } catch (e) { fields = []; }
+  if (fields.length === 0) return res.redirect('/surat/admin/templates/new?error=Form fields tidak valid');
+  const styles = JSON.stringify({
+    bodyFontSize: parseInt(body_font_size) || 11,
+    kopFontSize: parseInt(kop_font_size) || 9,
+    titleFontSize: parseInt(title_font_size) || 14,
+    signatureFontSize: 11
+  });
+  const margins = JSON.stringify([
+    parseInt(margin_left) || 60,
+    parseInt(margin_top) || 40,
+    parseInt(margin_right) || 60,
+    parseInt(margin_bottom) || 40
+  ]);
+  try {
+    db.prepare(
+      'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null);
+    res.redirect('/surat/admin/templates?message=Tersimpan');
+  } catch (e) {
+    res.redirect('/surat/admin/templates/new?error=' + encodeURIComponent(e.message));
+  }
+});
+
+router.get('/admin/templates/:id/edit', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const db = getDB();
+  const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(req.params.id);
+  if (!template) return res.redirect('/surat/admin/templates?error=Tidak ditemukan');
+  res.render('admin_template_form', { template, user: req.session.user, message: null, error: req.query.error });
+});
+
+router.post('/admin/templates/:id/edit', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const { name, code, description, form_fields, pejabat_nama, pejabat_jabatan, pejabat_nip, kop_kiri, kop_kanan, body_font_size, kop_font_size, title_font_size, margin_left, margin_top, margin_right, margin_bottom } = req.body;
+  const db = getDB();
+  let fields = [];
+  try { fields = JSON.parse(form_fields || '[]'); } catch (e) { fields = []; }
+  const styles = JSON.stringify({
+    bodyFontSize: parseInt(body_font_size) || 11,
+    kopFontSize: parseInt(kop_font_size) || 9,
+    titleFontSize: parseInt(title_font_size) || 14,
+    signatureFontSize: 11
+  });
+  const margins = JSON.stringify([
+    parseInt(margin_left) || 60,
+    parseInt(margin_top) || 40,
+    parseInt(margin_right) || 60,
+    parseInt(margin_bottom) || 40
+  ]);
+  try {
+    db.prepare(
+      'UPDATE letter_templates SET name=?, code=?, description=?, form_fields=?, styles=?, default_margins=?, kop_kiri=?, kop_kanan=?, pejabat_nama=?, pejabat_jabatan=?, pejabat_nip=? WHERE id=?'
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, req.params.id);
+    res.redirect('/surat/admin/templates?message=Tersimpan');
+  } catch (e) {
+    res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=' + encodeURIComponent(e.message));
+  }
+});
+
+router.post('/admin/templates/:id/logo', logoUpload.single('logo'), (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  if (!req.file) return res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=Pilih file logo');
+  const db = getDB();
+  const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(req.params.id);
+  if (!template) return res.redirect('/surat/admin/templates?error=Tidak ditemukan');
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const logoFilename = 'logo_' + req.params.id + ext;
+  const finalPath = path.join(logoDir, logoFilename);
+  fs.renameSync(req.file.path, finalPath);
+  db.prepare('UPDATE letter_templates SET logo_path = ? WHERE id = ?').run('uploads/logos/' + logoFilename, req.params.id);
+  res.redirect('/surat/admin/templates/' + req.params.id + '/edit?message=Logo tersimpan');
+});
+
+router.post('/admin/templates/:id/delete', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const db = getDB();
+  const count = db.prepare('SELECT COUNT(*) as c FROM letter_templates').get().c;
+  if (count <= 1) return res.redirect('/surat/admin/templates?error=Minimal satu template harus ada');
+  db.prepare('DELETE FROM letter_templates WHERE id = ?').run(req.params.id);
+  res.redirect('/surat/admin/templates?message=Template dihapus');
+});
+
+// --- Admin: Backup & Restore ---
+
+router.get('/admin/backup', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  res.render('admin_backup', { user: req.session.user, message: req.query.message, error: req.query.error });
+});
+
+router.get('/admin/backup/export', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const db = getDB();
+  const backup = {
+    version: 1,
+    exported_at: new Date().toISOString(),
+    users: db.prepare('SELECT id, username, display_name, role, email, phone, organization, created_at FROM users').all(),
+    signers: db.prepare('SELECT id, user_id, label, display_name, organization, email, phone, algorithm, created_at FROM signers').all(),
+    letter_templates: db.prepare('SELECT * FROM letter_templates').all(),
+    app_settings: db.prepare('SELECT setting_key, setting_value FROM app_settings').all()
+  };
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="digisign_backup_' + new Date().toISOString().slice(0, 10) + '.json"');
+  res.json(backup);
+});
+
+const backupUpload = multer({ dest: path.join(__dirname, '..', '..', 'uploads', 'temp') });
+
+router.post('/admin/backup/import', backupUpload.single('backup_file'), (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  if (!req.file) return res.redirect('/surat/admin/backup?error=Pilih file backup');
+  try {
+    const data = JSON.parse(fs.readFileSync(req.file.path, 'utf8'));
+    if (!data.version) return res.redirect('/surat/admin/backup?error=Format backup tidak valid');
+    const db = getDB();
+    if (data.users && Array.isArray(data.users)) {
+      for (const u of data.users) {
+        try {
+          db.prepare('INSERT OR IGNORE INTO users (id, username, display_name, role, email, phone, organization, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(u.id, u.username, u.display_name, u.role || 'user', u.email || null, u.phone || null, u.organization || null, u.created_at || null);
+        } catch (e) {}
+      }
+    }
+    if (data.signers && Array.isArray(data.signers)) {
+      for (const s of data.signers) {
+        try {
+          db.prepare('INSERT OR IGNORE INTO signers (id, user_id, label, display_name, organization, email, phone, algorithm, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(s.id, s.user_id, s.label, s.display_name, s.organization || null, s.email || null, s.phone || null, s.algorithm || 'RSA-2048', s.created_at || null);
+        } catch (e) {}
+      }
+    }
+    if (data.letter_templates && Array.isArray(data.letter_templates)) {
+      for (const t of data.letter_templates) {
+        try {
+          db.prepare('INSERT OR IGNORE INTO letter_templates (id, name, code, description, form_fields, styles, default_margins, logo_path, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(t.id, t.name, t.code, t.description || '', t.form_fields || '[]', t.styles || null, t.default_margins || null, t.logo_path || null, t.kop_kiri || null, t.kop_kanan || null, t.pejabat_nama || null, t.pejabat_jabatan || null, t.pejabat_nip || null, t.created_at || null);
+        } catch (e) {}
+      }
+    }
+    if (data.app_settings && Array.isArray(data.app_settings)) {
+      for (const s of data.app_settings) {
+        try {
+          db.prepare('INSERT OR REPLACE INTO app_settings (setting_key, setting_value) VALUES (?, ?)').run(s.setting_key, s.setting_value);
+        } catch (e) {}
+      }
+    }
+    try { fs.unlinkSync(req.file.path); } catch (e) {}
+    res.redirect('/surat/admin/backup?message=Import berhasil. Data users, signers, template & settings dipulihkan.');
+  } catch (e) {
+    try { fs.unlinkSync(req.file.path); } catch (e2) {}
+    res.redirect('/surat/admin/backup?error=Gagal: ' + encodeURIComponent(e.message));
+  }
 });
 
 module.exports = router;
