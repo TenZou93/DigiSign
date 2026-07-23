@@ -1,0 +1,69 @@
+<%- include('partials/header', { pageTitle: 'Kelola User', activePage: 'admin_users' }) %>
+
+<div class="top-bar">
+  <div>
+    <h1><i class="bi bi-people-fill"></i> Kelola User</h1>
+    <div class="breadcrumb-custom">Atur hak akses pengguna</div>
+  </div>
+</div>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="alert border-0" style="background:#f0fdf4;color:#16a34a;border-radius:10px"><i class="bi bi-check-circle"></i> <%= success %></div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert border-0" style="background:#fef2f2;color:#dc2626;border-radius:10px"><i class="bi bi-exclamation-triangle"></i> <%= error %></div>
+<% } %>
+
+<div class="card card-modern">
+  <div class="card-header-custom">
+    <h5><i class="bi bi-list-ul"></i> Daftar User</h5>
+  </div>
+  <div class="card-body-custom">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b">
+            <th class="border-0">Username</th>
+            <th class="border-0">Nama</th>
+            <th class="border-0">Role</th>
+            <th class="border-0">Tanggal Daftar</th>
+            <th class="border-0">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(u => { %>
+            <tr>
+              <td class="fw-semibold"><%= u.username %></td>
+              <td><%= u.display_name %></td>
+              <td>
+                <% if (u.role === 'admin') { %>
+                  <span class="badge" style="background:#fef3c7;color:#d97706;border-radius:6px;font-weight:600"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                <% } else { %>
+                  <span class="badge" style="background:#eff6ff;color:#3b82f6;border-radius:6px;font-weight:600"><i class="bi bi-person"></i> User</span>
+                <% } %>
+              </td>
+              <td style="color:#64748b;font-size:13px"><%= u.created_at %></td>
+              <td>
+                <% if (parseInt(u.id) === parseInt(user.id)) { %>
+                  <span class="small text-muted">(Anda)</span>
+                <% } else if (u.role === 'admin') { %>
+                  <form method="POST" action="/admin/users/<%= u.id %>/set-role" class="d-inline">
+                    <input type="hidden" name="role" value="user">
+                    <button class="btn btn-sm" style="border:1.5px solid #fecaca;border-radius:8px;color:#ef4444;font-size:11px" onclick="return confirm('Turunkan role <%= u.display_name %> menjadi user?')"><i class="bi bi-arrow-down"></i> Turunkan ke User</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/admin/users/<%= u.id %>/set-role" class="d-inline">
+                    <input type="hidden" name="role" value="admin">
+                    <button class="btn btn-sm" style="border:1.5px solid #bbf7d0;border-radius:8px;color:#16a34a;font-size:11px" onclick="return confirm('Jadikan <%= u.display_name %> sebagai admin?')"><i class="bi bi-arrow-up"></i> Jadikan Admin</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

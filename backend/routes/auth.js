@@ -21,7 +21,9 @@ router.post('/register', (req, res) => {
   try {
     const db = getDB();
     const hash = crypto.createHash('sha256').update(password).digest('hex');
-    db.prepare('INSERT INTO users (username, password, display_name) VALUES (?, ?, ?)').run(username, hash, display_name || username);
+    const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get()?.c || 0;
+    const role = userCount === 0 ? 'admin' : 'user';
+    db.prepare('INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)').run(username, hash, display_name || username, role);
     res.redirect('/auth/login');
   } catch (e) {
     if (e.message.includes('UNIQUE')) {

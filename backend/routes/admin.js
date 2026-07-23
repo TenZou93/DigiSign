@@ -161,4 +161,21 @@ router.post('/settings', requireAdmin, logoUpload.single('logo_file'), (req, res
   }
 });
 
+router.get('/users', requireAdmin, (req, res) => {
+  const db = getDB();
+  const users = db.prepare('SELECT id, username, display_name, email, role, created_at FROM users ORDER BY created_at ASC').all();
+  res.render('admin_users', { users, success: req.query.success, error: req.query.error });
+});
+
+router.post('/users/:id/set-role', requireAdmin, (req, res) => {
+  const db = getDB();
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!user) return res.redirect('/admin/users?error=User tidak ditemukan');
+  if (parseInt(req.params.id) === parseInt(req.session.user.id)) return res.redirect('/admin/users?error=Tidak bisa mengubah role sendiri');
+  const { role } = req.body;
+  if (!['admin', 'user'].includes(role)) return res.redirect('/admin/users?error=Role tidak valid');
+  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, req.params.id);
+  res.redirect('/admin/users?success=Role user berhasil diubah');
+});
+
 module.exports = router;

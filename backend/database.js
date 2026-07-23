@@ -76,7 +76,7 @@ async function initDB() {
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       display_name TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'admin',
+      role TEXT NOT NULL DEFAULT 'user',
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS signers (
