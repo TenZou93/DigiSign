@@ -22,6 +22,10 @@ function wrapText(text, font, fontSize, maxWidth) {
   return result;
 }
 
+function sanitize(str) {
+  return String(str || '').replace(/\r/g, '');
+}
+
 async function generateLetterPDF(template, formData, options = {}) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
@@ -48,6 +52,7 @@ async function generateLetterPDF(template, formData, options = {}) {
   let y = pageHeight - marginTop;
 
   function drawText(text, x, yPos, opts = {}) {
+    text = sanitize(text);
     const f = opts.bold ? fontBold : font;
     const size = opts.fontSize || bodySize;
     const align = opts.align || 'left';
@@ -83,7 +88,8 @@ async function generateLetterPDF(template, formData, options = {}) {
   }
 
   const dateStr = options.date || new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-  const data = formData;
+  const data = {};
+  for (const key of Object.keys(formData)) data[key] = sanitize(formData[key]);
 
   // --- KOP SURAT ---
   const kopKiri = template.kop_kiri || 'IIK NU TUBAN';
