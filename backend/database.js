@@ -164,6 +164,19 @@ async function initDB() {
   for (const col of ltColumns) {
     try { getWrapper().exec("ALTER TABLE letter_templates ADD COLUMN " + col + " TEXT"); } catch (e) {}
   }
+  // Isi NULL dengan default untuk template existing (one-time migration)
+  try {
+    const defaults = {
+      body_pembuka: 'Yang bertanda tangan di bawah ini:\n\n{{pejabat_nama}}\n{{pejabat_jabatan}}\n\nMenerangkan bahwa:\n',
+      body_data_label: 'Nama : {{nama}}\nNIM : {{nim}}\nProgram Studi : {{prodi}}\nSemester : {{semester}}',
+      body_isi: 'Adalah benar mahasiswa aktif pada Program Studi {{prodi}} {{institusi}}.\n\nSurat ini dibuat untuk keperluan {{keperluan}}.',
+      body_penutup: 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk digunakan sebagaimana mestinya.',
+      judul_surat: 'SURAT KETERANGAN'
+    };
+    for (const [col, val] of Object.entries(defaults)) {
+      try { getWrapper().run("UPDATE letter_templates SET " + col + " = ? WHERE " + col + " IS NULL", [val]); } catch (e) {}
+    }
+  } catch (e) {}
   try { getWrapper().exec(`
     CREATE TABLE IF NOT EXISTS letter_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

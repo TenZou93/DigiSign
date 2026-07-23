@@ -153,41 +153,49 @@ async function generateLetterPDF(template, formData, options = {}) {
   spacer(15);
 
   // --- BODY (from template, with placeholder replacement) ---
-  const bodyPembuka = fillPlaceholders(template.body_pembuka || 'Yang bertanda tangan di bawah ini:\n\n{{pejabat_nama}}\n{{pejabat_jabatan}}\n\nMenerangkan bahwa:\n', placeholders);
-  for (const para of bodyPembuka.split('\n\n')) {
-    checkPage();
-    for (const line of para.split('\n')) {
+  if (template.body_pembuka) {
+    const bodyPembuka = fillPlaceholders(template.body_pembuka, placeholders);
+    for (const para of bodyPembuka.split('\n\n')) {
+      checkPage();
+      for (const line of para.split('\n')) {
+        y = drawText(line, marginLeft, y, { fontSize: bodySize });
+      }
+      spacer(6);
+    }
+    spacer(4);
+  }
+
+  if (template.body_data_label) {
+    const bodyData = fillPlaceholders(template.body_data_label, placeholders);
+    for (const line of bodyData.split('\n')) {
       y = drawText(line, marginLeft, y, { fontSize: bodySize });
     }
-    spacer(6);
+    spacer(10);
   }
-  spacer(4);
 
-  const bodyData = fillPlaceholders(template.body_data_label || 'Nama : {{nama}}\nNIM : {{nim}}\nProgram Studi : {{prodi}}\nSemester : {{semester}}', placeholders);
-  for (const line of bodyData.split('\n')) {
-    y = drawText(line, marginLeft, y, { fontSize: bodySize });
-  }
-  spacer(10);
-
-  const bodyIsi = fillPlaceholders(template.body_isi || 'Adalah benar mahasiswa aktif pada Program Studi {{prodi}} {{institusi}}.\n\nSurat ini dibuat untuk keperluan {{keperluan}}.', placeholders);
-  for (const para of bodyIsi.split('\n\n')) {
-    checkPage();
-    for (const line of para.split('\n')) {
-      y = drawText(line, marginLeft, y, { fontSize: bodySize });
+  if (template.body_isi) {
+    const bodyIsi = fillPlaceholders(template.body_isi, placeholders);
+    for (const para of bodyIsi.split('\n\n')) {
+      checkPage();
+      for (const line of para.split('\n')) {
+        y = drawText(line, marginLeft, y, { fontSize: bodySize });
+      }
+      spacer(6);
     }
-    spacer(6);
+    spacer(10);
   }
-  spacer(10);
 
-  const bodyPenutup = fillPlaceholders(template.body_penutup || 'Demikian surat keterangan ini dibuat dengan sebenarnya untuk digunakan sebagaimana mestinya.', placeholders);
-  for (const para of bodyPenutup.split('\n\n')) {
-    checkPage();
-    for (const line of para.split('\n')) {
-      y = drawText(line, marginLeft, y, { fontSize: bodySize });
+  if (template.body_penutup) {
+    const bodyPenutup = fillPlaceholders(template.body_penutup, placeholders);
+    for (const para of bodyPenutup.split('\n\n')) {
+      checkPage();
+      for (const line of para.split('\n')) {
+        y = drawText(line, marginLeft, y, { fontSize: bodySize });
+      }
+      spacer(6);
     }
-    spacer(6);
+    spacer(20);
   }
-  spacer(20);
 
   // --- DATE ---
   checkPage();

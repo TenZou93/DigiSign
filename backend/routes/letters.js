@@ -265,7 +265,7 @@ router.post('/admin/templates/new', (req, res) => {
   try {
     db.prepare(
       'INSERT INTO letter_templates (name, code, description, form_fields, styles, default_margins, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, judul_surat || null, body_pembuka || null, body_data_label || null, body_isi || null, body_penutup || null);
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || '', kop_kanan || '', pejabat_nama || '', pejabat_jabatan || '', pejabat_nip || '', judul_surat || '', body_pembuka || '', body_data_label || '', body_isi || '', body_penutup || '');
     res.redirect('/surat/admin/templates?message=Tersimpan');
   } catch (e) {
     res.redirect('/surat/admin/templates/new?error=' + encodeURIComponent(e.message));
@@ -277,6 +277,10 @@ router.get('/admin/templates/:id/edit', (req, res) => {
   const db = getDB();
   const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(req.params.id);
   if (!template) return res.redirect('/surat/admin/templates?error=Tidak ditemukan');
+  // Convert NULL body fields to '' agar form tidak menampilkan null
+  for (const col of ['judul_surat', 'body_pembuka', 'body_data_label', 'body_isi', 'body_penutup', 'kop_kiri', 'kop_kanan', 'pejabat_nama', 'pejabat_jabatan', 'pejabat_nip']) {
+    if (template[col] === null) template[col] = '';
+  }
   res.render('admin_template_form', { template, user: req.session.user, message: null, error: req.query.error });
 });
 
@@ -301,7 +305,7 @@ router.post('/admin/templates/:id/edit', (req, res) => {
   try {
     db.prepare(
       'UPDATE letter_templates SET name=?, code=?, description=?, form_fields=?, styles=?, default_margins=?, kop_kiri=?, kop_kanan=?, pejabat_nama=?, pejabat_jabatan=?, pejabat_nip=?, judul_surat=?, body_pembuka=?, body_data_label=?, body_isi=?, body_penutup=? WHERE id=?'
-    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || null, kop_kanan || null, pejabat_nama || null, pejabat_jabatan || null, pejabat_nip || null, judul_surat || null, body_pembuka || null, body_data_label || null, body_isi || null, body_penutup || null, req.params.id);
+    ).run(name, code, description || '', JSON.stringify(fields), styles, margins, kop_kiri || '', kop_kanan || '', pejabat_nama || '', pejabat_jabatan || '', pejabat_nip || '', judul_surat || '', body_pembuka || '', body_data_label || '', body_isi || '', body_penutup || '', req.params.id);
     res.redirect('/surat/admin/templates?message=Tersimpan');
   } catch (e) {
     res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=' + encodeURIComponent(e.message));
