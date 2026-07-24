@@ -1,6 +1,10 @@
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { PDFDocument } = require('pdf-lib');
+
+const A4_WIDTH = 595.28;
+const A4_HEIGHT = 841.89;
 
 function generateDocxPDF(templatePath, formData, options = {}) {
   return new Promise((resolve, reject) => {
@@ -50,7 +54,7 @@ function generateDocxPDF(templatePath, formData, options = {}) {
       ? `"${process.env.LIBREOFFICE_PATH || 'C:\\Program Files\\LibreOffice\\program\\soffice.exe'}" --headless --convert-to pdf --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`
       : `libreoffice --headless --convert-to pdf --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`;
 
-    exec(cmd, { timeout: 60000 }, (err, stdout, stderr) => {
+    exec(cmd, { timeout: 60000 }, async (err, stdout, stderr) => {
       if (err) {
         try { fs.unlinkSync(mergedPath); } catch (e2) {}
         return reject(new Error('Gagal convert ke PDF. Pastikan LibreOffice terinstall. Error: ' + (stderr || err.message)));
@@ -59,12 +63,47 @@ function generateDocxPDF(templatePath, formData, options = {}) {
         try { fs.unlinkSync(mergedPath); } catch (e2) {}
         return reject(new Error('File PDF tidak ditemukan setelah konversi'));
       }
-      const pdfBuffer = fs.readFileSync(pdfPath);
-      try { fs.unlinkSync(mergedPath); } catch (e2) {}
-      try { fs.unlinkSync(pdfPath); } catch (e2) {}
-      resolve(pdfBuffer);
+
+      try {
+        const rawPdf = fs.readFileSync(pdfPath);
+        const result = await ensureA4(rawPdf);
+        try { fs.unlinkSync(mergedPath); } catch (e2) {}
+        try { fs.unlinkSync(pdfPath); } catch (e2) {}
+        resolve(result);
+      } catch (e) {
+        try { fs.unlinkSync(mergedPath); } catch (e2) {}
+        try { fs.unlinkSync(pdfPath); } catch (e2) {}
+        reject(new Error('Gagal post-process PDF ke A4: ' + e.message));
+      }
     });
   });
+}
+
+async function ensureA4(pdfBuffer) {
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const pages = pdfDoc.getPages();
+  let needsA4 = false;
+  for (const page of pages) {
+    const { width, height } = page.getSize();
+    if (Math.abs(width - A4_WIDTH) > 2 || Math.abs(height - A4_HEIGHT) > 2) {
+      needsA4 = true;
+      break;
+    }
+  }
+  if (!needsA4) return pdfBuffer;
+
+  const a4Doc = await PDFDocument.create();
+  for (const page of pages) {
+    const { width, height } = page.getSize();
+    const scale = Math.min(A4_WIDTH / width, A4_HEIGHT / height) * 0.95;
+    const embed = await a4Doc.embedPage(page, {
+      left: 0, right: width, bottom: 0, top: height,
+      transform: [scale, 0, 0, scale, (A4_WIDTH - width * scale) / 2, (A4_HEIGHT - height * scale) / 2]
+    });
+    const newPage = a4Doc.addPage([A4_WIDTH, A4_HEIGHT]);
+    newPage.drawPage(embed);
+  }
+  return Buffer.from(await a4Doc.save());
 }
 
 module.exports = { generateDocxPDF };

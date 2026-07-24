@@ -206,14 +206,12 @@ async function generateLetterPDF(template, formData, options = {}) {
     spacer(20);
   }
 
-  // --- DATE (just date, no institution name) ---
-  checkPage();
-  y = drawText(dateStr, marginLeft, y, { fontSize: bodySize, align: 'right' });
-  spacer(5);
-
   // --- SIGNATURE (right-aligned, wider space) ---
   checkPage();
   y = drawText('An. Rektor', marginLeft, y, { fontSize: bodySize, align: 'right' });
+  y = drawText(dateStr, marginLeft, y, { fontSize: bodySize, align: 'right' });
+  spacer(5);
+  checkPage();
   y = drawText(pejabatJabatan, marginLeft, y, { fontSize: bodySize, align: 'right' });
   spacer(80);
   y = drawText(pejabatNama, marginLeft, y, { bold: true, fontSize: sigSize, align: 'right' });
