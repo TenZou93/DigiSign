@@ -131,6 +131,20 @@
           </div>
           <button class="btn btn-sm" style="border:1.5px solid #cbd5e1;border-radius:8px;font-size:12px"><i class="bi bi-upload"></i> Upload Logo</button>
         </form>
+        <hr>
+        <h6 class="fw-bold mb-2">Template .docx (Mail Merge)</h6>
+        <p class="text-muted small mb-2">Upload file .docx dengan placeholder <code>{nama}</code>, <code>{nim}</code>, dll. Nama placeholder harus cocok dengan <code>name</code> di Field Form.</p>
+        <form method="POST" action="/surat/admin/templates/<%= template.id %>/docx" enctype="multipart/form-data">
+          <div class="mb-2">
+            <% if (template.docx_template_path) { %>
+              <div class="mb-2"><span class="badge" style="background:#f0fdf4;color:#16a34a">.docx terpasang</span>
+                <button type="submit" formaction="/surat/admin/templates/<%= template.id %>/docx/delete" formmethod="POST" class="btn btn-sm btn-outline-danger ms-2" style="border-radius:8px;font-size:11px"><i class="bi bi-trash"></i> Hapus</button>
+              </div>
+            <% } %>
+            <input type="file" name="docx_template" class="form-control" style="border-radius:10px;border:1.5px solid #e2e8f0;font-size:13px" accept=".docx">
+          </div>
+          <button class="btn btn-sm" style="border:1.5px solid #cbd5e1;border-radius:8px;font-size:12px"><i class="bi bi-upload"></i> Upload .docx</button>
+        </form>
       <% } %>
     </div>
   </div>

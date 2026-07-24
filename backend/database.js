@@ -164,6 +164,7 @@ async function initDB() {
   for (const col of ltColumns) {
     try { getWrapper().exec("ALTER TABLE letter_templates ADD COLUMN " + col + " TEXT"); } catch (e) {}
   }
+  try { getWrapper().exec("ALTER TABLE letter_templates ADD COLUMN docx_template_path TEXT"); } catch (e) {}
   // Isi NULL dengan default untuk template existing (one-time migration)
   try {
     const defaults = {
@@ -197,6 +198,7 @@ async function initDB() {
       body_data_label TEXT,
       body_isi TEXT,
       body_penutup TEXT,
+      docx_template_path TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
   `); } catch (e) {}

@@ -6,10 +6,15 @@ const multer = require('multer');
 const router = express.Router();
 const { getDB } = require('../database');
 const { generateLetterPDF } = require('../letter-generator');
+const { generateDocxPDF } = require('../docx-generator');
 
 const logoUpload = multer({ dest: path.join(__dirname, '..', '..', 'uploads', 'logos') });
 const logoDir = path.join(__dirname, '..', '..', 'uploads', 'logos');
 if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
+
+const docxUpload = multer({ dest: path.join(__dirname, '..', '..', 'uploads', 'docx_templates') });
+const docxDir = path.join(__dirname, '..', '..', 'uploads', 'docx_templates');
+if (!fs.existsSync(docxDir)) fs.mkdirSync(docxDir, { recursive: true });
 
 const lettersDir = path.join(__dirname, '..', '..', 'uploads', 'letters');
 if (!fs.existsSync(lettersDir)) fs.mkdirSync(lettersDir, { recursive: true });
@@ -59,7 +64,19 @@ router.post('/templates/:code/generate', async (req, res) => {
     const guestEmail = (req.body.guest_email || '').trim() || '';
     const guestPhone = (req.body.guest_phone || '').trim() || '';
 
-    const pdfBuffer = await generateLetterPDF(template, fieldData);
+    let pdfBuffer;
+    if (template.docx_template_path) {
+      const tmplPath = path.join(__dirname, '..', '..', template.docx_template_path);
+      if (!fs.existsSync(tmplPath)) throw new Error('File template .docx tidak ditemukan');
+      pdfBuffer = await generateDocxPDF(tmplPath, fieldData, {
+        tanggal: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+        nomor_surat: fieldData.nomor_surat || 'IIK/UN.01/SK/' + Date.now(),
+        pejabat_nama: template.pejabat_nama || '',
+        pejabat_jabatan: template.pejabat_jabatan || ''
+      });
+    } else {
+      pdfBuffer = await generateLetterPDF(template, fieldData);
+    }
 
     const tracking = generateTracking();
     const filename = `letter_${tracking}_${Date.now()}.pdf`;
@@ -326,6 +343,33 @@ router.post('/admin/templates/:id/logo', logoUpload.single('logo'), (req, res) =
   res.redirect('/surat/admin/templates/' + req.params.id + '/edit?message=Logo tersimpan');
 });
 
+router.post('/admin/templates/:id/docx', docxUpload.single('docx_template'), (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  if (!req.file) return res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=Pilih file .docx');
+  const db = getDB();
+  const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(req.params.id);
+  if (!template) return res.redirect('/surat/admin/templates?error=Tidak ditemukan');
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  if (ext !== '.docx') return res.redirect('/surat/admin/templates/' + req.params.id + '/edit?error=Hanya file .docx');
+  const docxFilename = 'tmpl_' + req.params.id + '.docx';
+  const finalPath = path.join(docxDir, docxFilename);
+  fs.renameSync(req.file.path, finalPath);
+  db.prepare('UPDATE letter_templates SET docx_template_path = ? WHERE id = ?').run('uploads/docx_templates/' + docxFilename, req.params.id);
+  res.redirect('/surat/admin/templates/' + req.params.id + '/edit?message=Template .docx tersimpan');
+});
+
+router.post('/admin/templates/:id/docx/delete', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
+  const db = getDB();
+  const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(req.params.id);
+  if (template && template.docx_template_path) {
+    const p = path.join(__dirname, '..', '..', template.docx_template_path);
+    try { fs.unlinkSync(p); } catch (e) {}
+  }
+  db.prepare('UPDATE letter_templates SET docx_template_path = NULL WHERE id = ?').run(req.params.id);
+  res.redirect('/surat/admin/templates/' + req.params.id + '/edit?message=Template .docx dihapus');
+});
+
 router.post('/admin/templates/:id/delete', (req, res) => {
   if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
   const db = getDB();
@@ -386,8 +430,8 @@ router.post('/admin/backup/import', backupUpload.single('backup_file'), (req, re
     if (data.letter_templates && Array.isArray(data.letter_templates)) {
       for (const t of data.letter_templates) {
         try {
-          db.prepare('INSERT OR REPLACE INTO letter_templates (id, name, code, description, form_fields, styles, default_margins, logo_path, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(t.id, t.name, t.code, t.description || '', t.form_fields || '[]', t.styles || null, t.default_margins || null, t.logo_path || null, t.kop_kiri || null, t.kop_kanan || null, t.pejabat_nama || null, t.pejabat_jabatan || null, t.pejabat_nip || null, t.created_at || null);
+          db.prepare('INSERT OR REPLACE INTO letter_templates (id, name, code, description, form_fields, styles, default_margins, logo_path, kop_kiri, kop_kanan, pejabat_nama, pejabat_jabatan, pejabat_nip, judul_surat, body_pembuka, body_data_label, body_isi, body_penutup, docx_template_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(t.id, t.name, t.code, t.description || '', t.form_fields || '[]', t.styles || null, t.default_margins || null, t.logo_path || null, t.kop_kiri || null, t.kop_kanan || null, t.pejabat_nama || null, t.pejabat_jabatan || null, t.pejabat_nip || null, t.judul_surat || null, t.body_pembuka || null, t.body_data_label || null, t.body_isi || null, t.body_penutup || null, t.docx_template_path || null, t.created_at || null);
         } catch (e) {}
       }
     }

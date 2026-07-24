@@ -9,6 +9,7 @@
   "dependencies": {
     "@signpdf/signer-p12": "^3.3.0",
     "@signpdf/signpdf": "^3.3.0",
+    "docxtemplater": "^3.46.0",
     "ejs": "^3.1.10",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
@@ -17,6 +18,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.4.168",
     "pdfmake": "^0.3.11",
+    "pizzip": "^3.1.7",
     "qrcode": "^1.5.4",
     "sql.js": "^1.10.0",
     "uuid": "^9.0.0"
