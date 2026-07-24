@@ -133,7 +133,7 @@
         </form>
         <hr>
         <h6 class="fw-bold mb-2">Template .docx (Mail Merge)</h6>
-        <p class="text-muted small mb-2">Upload file .docx dengan placeholder <code>{nama}</code>, <code>{nim}</code>, dll. Juga: <code>{nomor_surat}</code>, <code>{tanggal}</code>, <code>{bulan}</code>, <code>{tahun}</code>, <code>{bulan_angka}</code>, <code>{pejabat_nama}</code>, <code>{pejabat_jabatan}</code> otomatis terisi.</p>
+        <p class="text-muted small mb-2">Upload file .docx dengan placeholder <code>{nama}</code>, <code>{nim}</code>, dll. Juga: <code>{nomor_surat}</code>, <code>{tanggal}</code>, <code>{bulan}</code>, <code>{tahun}</code>, <code>{bulan_angka}</code>, <code>{bulan_romawi}</code>, <code>{pejabat_nama}</code>, <code>{pejabat_jabatan}</code> otomatis terisi.</p>
         <form method="POST" action="/surat/admin/templates/<%= template.id %>/docx" enctype="multipart/form-data">
           <div class="mb-2">
             <% if (template.docx_template_path) { %>

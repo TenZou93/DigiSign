@@ -46,7 +46,7 @@
                     <% if (d.status === 'pending') { %>
                       <form method="POST" action="/surat/admin/<%= d.id %>/approve" class="d-inline">
                         <input type="hidden" name="_redirect" value="/surat/admin/list">
-                        <input type="text" name="nomor_surat" class="form-control form-control-sm d-inline-block" style="width:100px;font-size:10px;border-radius:6px" placeholder="No. Surat" value="<%= d.nomor_surat || 'IIK/UN.01/SK/' + String(new Date().getMonth()+1).padStart(2,'0') + '/' + new Date().getFullYear() %>">
+                        <input type="text" name="nomor_surat" class="form-control form-control-sm d-inline-block" style="width:100px;font-size:10px;border-radius:6px" placeholder="No. Surat" value="<%= d.nomor_surat || 'IIK/UN.01/SK/' + (['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][new Date().getMonth()]) + '/' + new Date().getFullYear() %>">
                         <select name="signer_id" class="form-select form-select-sm d-inline-block" style="width:auto;max-width:120px;font-size:10px;border-radius:6px;display:inline!important" onchange="if(this.value){this.form.querySelector('.btn-setuju').disabled=false}">
                           <option value="">Signer...</option>
                           <% (typeof allSigners !== 'undefined' ? allSigners : []).forEach(s => { %>

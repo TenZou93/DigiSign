@@ -6,6 +6,10 @@ const { PDFDocument } = require('pdf-lib');
 const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 
+const ROMAWI = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+function bulanRomawi(n) { return ROMAWI[(n - 1) % 12] || 'I'; }
+
 function generateDocxPDF(templatePath, formData, options = {}) {
   return new Promise((resolve, reject) => {
     let PizZip, Docxtemplater;
@@ -32,6 +36,7 @@ function generateDocxPDF(templatePath, formData, options = {}) {
     mergedData.bulan = now.toLocaleDateString('id-ID', { month: 'long' });
     mergedData.tahun = String(now.getFullYear());
     mergedData.bulan_angka = String(now.getMonth() + 1).padStart(2, '0');
+    mergedData.bulan_romawi = bulanRomawi(now.getMonth() + 1);
     if (options.nomor_surat) mergedData.nomor_surat = options.nomor_surat;
     if (options.pejabat_nama) mergedData.pejabat_nama = options.pejabat_nama;
     if (options.pejabat_jabatan) mergedData.pejabat_jabatan = options.pejabat_jabatan;
