@@ -5,10 +5,9 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repo
       libreoffice-writer \
       libreoffice-common \
       font-noto \
+      font-noto-extra \
       ttf-freefont \
       ttf-dejavu \
-      liberation-fonts \
-      ttf-liberation \
     && fc-cache -f \
     && rm -rf /var/cache/apk/* /tmp/*
 
