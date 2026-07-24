@@ -59,13 +59,11 @@ async function generateLetterPDF(template, formData, options = {}) {
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
   let y = pageHeight - marginTop;
 
-  // Resolve signer info: options.signer overrides template defaults
   const pejabatNama = (options.signer && options.signer.display_name) || template.pejabat_nama || 'Nama Pejabat';
   const pejabatJabatan = (options.signer && (options.signer.jabatan || options.signer.label)) || template.pejabat_jabatan || 'Jabatan';
   const pejabatNip = template.pejabat_nip || 'NIP. ..........................';
   const institusi = template.kop_kiri || 'IIK NU TUBAN';
 
-  // Prepare placeholder variables
   const placeholders = { ...formData, pejabat_nama: pejabatNama, pejabat_jabatan: pejabatJabatan, pejabat_nip: pejabatNip, institusi };
 
   function drawText(text, x, yPos, opts = {}) {
@@ -112,7 +110,7 @@ async function generateLetterPDF(template, formData, options = {}) {
   const kopKiri = template.kop_kiri || 'IIK NU TUBAN';
   const kopKanan = template.kop_kanan || '';
   const logoPath = template.logo_path
-    ? path.join(__dirname, '..', '..', template.logo_path)
+    ? path.join(__dirname, '..', template.logo_path)
     : null;
 
   if (logoPath && fs.existsSync(logoPath)) {
@@ -165,10 +163,21 @@ async function generateLetterPDF(template, formData, options = {}) {
     spacer(4);
   }
 
+  // --- DATA TABLE (body_data_label rendered as table) ---
   if (template.body_data_label) {
     const bodyData = fillPlaceholders(template.body_data_label, placeholders);
+    const labelColX = marginLeft;
+    const valueColX = marginLeft + 130;
     for (const line of bodyData.split('\n')) {
-      y = drawText(line, marginLeft, y, { fontSize: bodySize });
+      const colonIdx = line.indexOf(':');
+      if (colonIdx >= 0) {
+        const labelPart = line.substring(0, colonIdx + 1);
+        const valuePart = line.substring(colonIdx + 1).trimStart();
+        y = drawText(labelPart, labelColX, y, { fontSize: bodySize });
+        y = drawText(valuePart, valueColX, y, { fontSize: bodySize });
+      } else {
+        y = drawText(line, marginLeft, y, { fontSize: bodySize });
+      }
     }
     spacer(10);
   }
@@ -197,21 +206,21 @@ async function generateLetterPDF(template, formData, options = {}) {
     spacer(20);
   }
 
-  // --- DATE ---
+  // --- DATE (just date, no institution name) ---
   checkPage();
-  y = drawText(kopKiri + ', ' + dateStr, marginLeft, y, { fontSize: bodySize, align: 'right' });
+  y = drawText(dateStr, marginLeft, y, { fontSize: bodySize, align: 'right' });
   spacer(5);
 
-  // --- SIGNATURE ---
+  // --- SIGNATURE (right-aligned, wider space) ---
   checkPage();
-  y = drawText('An. Rektor', marginLeft, y, { fontSize: bodySize, align: 'center' });
-  y = drawText(pejabatJabatan, marginLeft, y, { fontSize: bodySize, align: 'center' });
-  spacer(40);
-  y = drawText(pejabatNama, marginLeft, y, { bold: true, fontSize: sigSize, align: 'center' });
-  y = drawText(pejabatNip, marginLeft, y, { fontSize: kopSize, align: 'center' });
+  y = drawText('An. Rektor', marginLeft, y, { fontSize: bodySize, align: 'right' });
+  y = drawText(pejabatJabatan, marginLeft, y, { fontSize: bodySize, align: 'right' });
+  spacer(80);
+  y = drawText(pejabatNama, marginLeft, y, { bold: true, fontSize: sigSize, align: 'right' });
+  y = drawText(pejabatNip, marginLeft, y, { fontSize: kopSize, align: 'right' });
 
   spacer(15);
-  y = drawText('Tanda Tangan Digital', marginLeft, y, { fontSize: kopSize, color: rgb(0.5, 0.5, 0.5), align: 'center' });
+  y = drawText('Tanda Tangan Digital', marginLeft, y, { fontSize: kopSize, color: rgb(0.5, 0.5, 0.5), align: 'right' });
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
