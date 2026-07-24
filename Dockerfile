@@ -7,6 +7,9 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repo
       font-noto \
       ttf-freefont \
       ttf-dejavu \
+      liberation-fonts \
+      ttf-liberation \
+    && fc-cache -f \
     && rm -rf /var/cache/apk/* /tmp/*
 
 WORKDIR /app

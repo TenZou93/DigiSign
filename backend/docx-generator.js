@@ -27,7 +27,11 @@ function generateDocxPDF(templatePath, formData, options = {}) {
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
     const mergedData = { ...formData };
+    const now = new Date();
     if (options.tanggal) mergedData.tanggal = options.tanggal;
+    mergedData.bulan = now.toLocaleDateString('id-ID', { month: 'long' });
+    mergedData.tahun = String(now.getFullYear());
+    mergedData.bulan_angka = String(now.getMonth() + 1).padStart(2, '0');
     if (options.nomor_surat) mergedData.nomor_surat = options.nomor_surat;
     if (options.pejabat_nama) mergedData.pejabat_nama = options.pejabat_nama;
     if (options.pejabat_jabatan) mergedData.pejabat_jabatan = options.pejabat_jabatan;
@@ -82,20 +86,20 @@ function generateDocxPDF(templatePath, formData, options = {}) {
 async function ensureA4(pdfBuffer) {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   const pages = pdfDoc.getPages();
-  let needsA4 = false;
+  let needsResize = false;
   for (const page of pages) {
     const { width, height } = page.getSize();
     if (Math.abs(width - A4_WIDTH) > 2 || Math.abs(height - A4_HEIGHT) > 2) {
-      needsA4 = true;
+      needsResize = true;
       break;
     }
   }
-  if (!needsA4) return pdfBuffer;
+  if (!needsResize) return pdfBuffer;
 
   const a4Doc = await PDFDocument.create();
   for (const page of pages) {
     const { width, height } = page.getSize();
-    const scale = Math.min(A4_WIDTH / width, A4_HEIGHT / height) * 0.95;
+    const scale = Math.min(A4_WIDTH / width, A4_HEIGHT / height);
     const embed = await a4Doc.embedPage(page, {
       left: 0, right: width, bottom: 0, top: height,
       transform: [scale, 0, 0, scale, (A4_WIDTH - width * scale) / 2, (A4_HEIGHT - height * scale) / 2]
