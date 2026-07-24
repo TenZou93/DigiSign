@@ -165,6 +165,7 @@ async function initDB() {
     try { getWrapper().exec("ALTER TABLE letter_templates ADD COLUMN " + col + " TEXT"); } catch (e) {}
   }
   try { getWrapper().exec("ALTER TABLE letter_templates ADD COLUMN docx_template_path TEXT"); } catch (e) {}
+  try { getWrapper().exec("ALTER TABLE generated_letters ADD COLUMN nomor_surat TEXT"); } catch (e) {}
   // Isi NULL dengan default untuk template existing (one-time migration)
   try {
     const defaults = {
@@ -217,6 +218,7 @@ async function initDB() {
       signature_id INTEGER,
       signed_file TEXT,
       admin_note TEXT,
+      nomor_surat TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (template_id) REFERENCES letter_templates(id),
       FOREIGN KEY (signer_id) REFERENCES signers(id),

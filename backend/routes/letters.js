@@ -186,14 +186,41 @@ router.get('/my', (req, res) => {
   res.render('my_letters', { letters, page, total, totalPages, isAdmin, user: req.session.user, message: req.query.message, error: req.query.error });
 });
 
-// Admin: approve letter (dengan signer_id dari form)
-router.post('/admin/:id/approve', (req, res) => {
+// Admin: approve letter (dengan signer_id + nomor_surat dari form)
+router.post('/admin/:id/approve', async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'admin') return res.redirect('/auth/login');
   const db = getDB();
   const doc = db.prepare('SELECT * FROM generated_letters WHERE id = ?').get(req.params.id);
   if (!doc) return res.redirect('/surat/admin/list?error=Tidak ditemukan');
   const signerId = req.body.signer_id || doc.signer_id || null;
-  db.prepare("UPDATE generated_letters SET status = 'approved', signer_id = ? WHERE id = ?").run(signerId, req.params.id);
+  const nomorSurat = (req.body.nomor_surat || '').trim();
+  db.prepare("UPDATE generated_letters SET status = 'approved', signer_id = ?, nomor_surat = ? WHERE id = ?").run(signerId, nomorSurat || null, req.params.id);
+
+  // Re-generate PDF untuk .docx template dengan nomor_surat dari admin
+  if (nomorSurat) {
+    try {
+      const template = db.prepare('SELECT * FROM letter_templates WHERE id = ?').get(doc.template_id);
+      if (template && template.docx_template_path) {
+        const fieldData = JSON.parse(doc.field_data || '{}');
+        const tmplPath = path.join(__dirname, '..', '..', template.docx_template_path);
+        if (fs.existsSync(tmplPath)) {
+          const pdfBuffer = await generateDocxPDF(tmplPath, fieldData, {
+            tanggal: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+            nomor_surat: nomorSurat,
+            pejabat_nama: template.pejabat_nama || '',
+            pejabat_jabatan: template.pejabat_jabatan || ''
+          });
+          const filename = `letter_${doc.tracking_code}_${Date.now()}.pdf`;
+          const filePath = path.join(lettersDir, filename);
+          fs.writeFileSync(filePath, pdfBuffer);
+          db.prepare('UPDATE generated_letters SET filename = ? WHERE id = ?').run(filename, req.params.id);
+        }
+      }
+    } catch (e) {
+      console.error('Gagal re-generate PDF:', e.message);
+    }
+  }
+
   const dest = req.body._redirect || '/surat/admin/list';
   res.redirect(dest + '?message=Disetujui');
 });
