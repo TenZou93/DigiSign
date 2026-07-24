@@ -60,8 +60,8 @@ function generateDocxPDF(templatePath, formData, options = {}) {
     const pdfPath = mergedPath.replace(/\.docx$/i, '.pdf');
 
     const cmd = process.platform === 'win32'
-      ? `"${process.env.LIBREOFFICE_PATH || 'C:\\Program Files\\LibreOffice\\program\\soffice.exe'}" --headless --convert-to pdf --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`
-      : `libreoffice --headless --convert-to pdf --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`;
+      ? `"${process.env.LIBREOFFICE_PATH || 'C:\\Program Files\\LibreOffice\\program\\soffice.exe'}" --headless --convert-to pdf:"writer_pdf_Export:{'EmbedStandardFonts':true,'ExportEmbeddedFonts':true}" --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`
+      : `libreoffice --headless --convert-to pdf:"writer_pdf_Export:{'EmbedStandardFonts':true,'ExportEmbeddedFonts':true}" --outdir "${path.dirname(pdfPath)}" "${mergedPath}"`;
 
     exec(cmd, { timeout: 60000 }, async (err, stdout, stderr) => {
       if (err) {
